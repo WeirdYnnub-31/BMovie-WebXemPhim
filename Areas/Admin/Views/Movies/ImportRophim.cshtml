@@ -1,0 +1,20 @@
+@{
+    ViewData["Title"]="Import phim từ Rophim";
+}
+<section class="mb-5">
+    <h1 class="h4 fw-bold mb-3">Import phim từ Rophim</h1>
+    <form method="post" class="glass-card p-4 rounded-4 mb-4 bg-dark border-0" asp-action="ImportRophim">
+        <label class="form-label mb-2">Nhập slug phim (mã đường dẫn trên rophim.li)</label>
+        <input class="form-control rounded-pill mb-3" name="rophimSlug" placeholder="vd: one-piece" required />
+        <button class="btn neon-btn rounded-pill px-4" type="submit">Import Rophim</button>
+        <div class="form-text mt-2">
+            <p>VD slug: Lấy từ URL phim trên <a href="https://www.rophim.li/phim-bo" target="_blank">rophim.li</a></p>
+            <p>Ví dụ: URL <code>https://www.rophim.li/phim-bo/one-piece</code> → slug là <code>one-piece</code></p>
+        </div>
+    </form>
+    @if (ViewBag.ImportResult != null)
+    {
+        <div class="alert alert-info bg-glass border-0 rounded-4 text-center">@ViewBag.ImportResult</div>
+    }
+</section>
+

@@ -1,0 +1,25 @@
+@{
+    var name = ViewBag.UserEmail as string;
+    var avatarClaim = ViewBag.AvatarClaim as string;
+    var initial = ViewBag.Initial as string ?? "U";
+}
+
+@if (User?.Identity?.IsAuthenticated == true && !string.IsNullOrEmpty(name))
+{
+    if (!string.IsNullOrEmpty(avatarClaim))
+    {
+        var avatarUrl = avatarClaim + (avatarClaim.Contains("?") ? "&" : "?") + "t=" + DateTime.UtcNow.Ticks;
+        <img src="@avatarUrl" alt="Avatar" class="avatar-circle" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%;" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='inline-flex';" />
+        <span class="avatar-circle" style="display:none;">@initial</span>
+    }
+    else
+    {
+        <span class="avatar-circle">@initial</span>
+    }
+    <span class="d-none d-sm-inline">@name</span>
+}
+else
+{
+    <span>Tài khoản</span>
+}
+

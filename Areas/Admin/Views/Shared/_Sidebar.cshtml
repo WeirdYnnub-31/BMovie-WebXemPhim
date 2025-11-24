@@ -1,0 +1,76 @@
+@{
+    var controller = ViewContext.RouteData.Values["Controller"]?.ToString();
+}
+<aside class="admin-sidebar-nav glass-card">
+    <div class="sidebar-heading">Điều hướng</div>
+    <nav class="sidebar-menu">
+        <a class="sidebar-item @(controller == "Dashboard" ? "active" : "")" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
+            <div class="icon-chip"><i class="fa-solid fa-chart-line"></i></div>
+            <div>
+                <span class="item-title">Tổng quan</span>
+                <small>Dashboard chính</small>
+            </div>
+        </a>
+        <a class="sidebar-item @(controller == "Movies" ? "active" : "")" asp-area="Admin" asp-controller="Movies" asp-action="Index">
+            <div class="icon-chip"><i class="fa-solid fa-clapperboard"></i></div>
+            <div>
+                <span class="item-title">Phim</span>
+                <small>Danh sách & nhập liệu</small>
+            </div>
+        </a>
+        <a class="sidebar-item @(controller == "Genres" ? "active" : "")" asp-area="Admin" asp-controller="Genres" asp-action="Index">
+            <div class="icon-chip"><i class="fa-solid fa-tags"></i></div>
+            <div>
+                <span class="item-title">Thể loại</span>
+                <small>Quản lý tag</small>
+            </div>
+        </a>
+        <a class="sidebar-item @(controller == "Comments" ? "active" : "")" asp-area="Admin" asp-controller="Comments" asp-action="Index">
+            <div class="icon-chip"><i class="fa-solid fa-comments"></i></div>
+            <div>
+                <span class="item-title">Bình luận</span>
+                <small>Kiểm duyệt & phản hồi</small>
+            </div>
+        </a>
+        <a class="sidebar-item @(controller == "Users" ? "active" : "")" asp-area="Admin" asp-controller="Users" asp-action="Index">
+            <div class="icon-chip"><i class="fa-solid fa-users"></i></div>
+            <div>
+                <span class="item-title">Người dùng</span>
+                <small>Quyền & hồ sơ</small>
+            </div>
+        </a>
+    </nav>
+
+    <div class="sidebar-heading mt-4">Tác vụ nâng cao</div>
+    <nav class="sidebar-menu">
+        <a class="sidebar-item pill-info @(controller == "Assets" ? "active" : "")" asp-area="Admin" asp-controller="Assets" asp-action="Upload">
+            <div class="icon-chip"><i class="fa-solid fa-upload"></i></div>
+            <div>
+                <span class="item-title">Tải ảnh lên</span>
+                <small>Poster / Banner</small>
+            </div>
+        </a>
+        <a class="sidebar-item pill-info @(controller == "Sync" ? "active" : "")" asp-area="Admin" asp-controller="Sync" asp-action="Index">
+            <div class="icon-chip"><i class="fa-solid fa-arrows-rotate"></i></div>
+            <div>
+                <span class="item-title">Đồng bộ Bmovie</span>
+                <small>Rophim / TMDb</small>
+            </div>
+        </a>
+        <a class="sidebar-item pill-warning @(controller == "Backup" ? "active" : "")" asp-area="Admin" asp-controller="Backup" asp-action="Index">
+            <div class="icon-chip"><i class="fa-solid fa-database"></i></div>
+            <div>
+                <span class="item-title">Backup dữ liệu</span>
+                <small>Xuất & khôi phục</small>
+            </div>
+        </a>
+        <a class="sidebar-item pill-info @(controller == "Server" ? "active" : "")" asp-area="Admin" asp-controller="Server" asp-action="Index">
+            <div class="icon-chip"><i class="fa-solid fa-server"></i></div>
+            <div>
+                <span class="item-title">Quản lý Server</span>
+                <small>Monitoring & Health</small>
+            </div>
+        </a>
+    </nav>
+</aside>
+

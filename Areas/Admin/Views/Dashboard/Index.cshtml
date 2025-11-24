@@ -1,0 +1,369 @@
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="admin-dashboard">
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="summary-icon">🎬</div>
+            <div>
+                <span>Phim</span>
+                <strong>@ViewBag.TotalMovies</strong>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon">👥</div>
+            <div>
+                <span>User</span>
+                <strong>@ViewBag.TotalUsers</strong>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon">💬</div>
+            <div>
+                <span>Bình luận chờ</span>
+                <strong>@ViewBag.PendingComments</strong>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon">👁️</div>
+            <div>
+                <span>Lượt xem</span>
+                <strong>@ViewBag.TotalViews</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="quick-actions">
+        <a class="quick-action-card" asp-area="Admin" asp-controller="Movies" asp-action="Create">
+            <div class="icon">➕</div>
+            <div>Thêm phim</div>
+        </a>
+        <a class="quick-action-card" asp-area="Admin" asp-controller="Genres" asp-action="Create">
+            <div class="icon">🏷️</div>
+            <div>Thêm thể loại</div>
+        </a>
+        <a class="quick-action-card" asp-area="Admin" asp-controller="Movies" asp-action="ImportRophim">
+            <div class="icon">⬇️</div>
+            <div>Import Rophim</div>
+        </a>
+        <a class="quick-action-card" asp-area="Admin" asp-controller="Movies" asp-action="Index">
+            <div class="icon">📂</div>
+            <div>Quản lý phim</div>
+        </a>
+    </div>
+
+    <div class="panel">
+        <h3>Hoạt động 30 ngày qua</h3>
+        <div class="stats-row">
+            <div class="stats-pill">
+                <span class="text-white-50">Phim mới</span>
+                <strong class="fs-3 text-success">@ViewBag.RecentMovies</strong>
+                <small class="text-white-50">30 ngày qua</small>
+            </div>
+            <div class="stats-pill">
+                <span class="text-white-50">Bình luận mới</span>
+                <strong class="fs-3 text-info">@ViewBag.RecentComments</strong>
+                <small class="text-white-50">30 ngày qua</small>
+            </div>
+            <div class="stats-pill">
+                <span class="text-white-50">Lượt xem mới</span>
+                <strong class="fs-3 text-warning">@ViewBag.RecentViews</strong>
+                <small class="text-white-50">30 ngày qua</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-6">
+            <div class="panel chart-card">
+                <h3>Phân bố thể loại</h3>
+                <canvas id="chart-genres" height="200"></canvas>
+            </div>
+        </div>
+        <div class="col-12 col-lg-6">
+            <div class="panel chart-card">
+                <h3>Phim xem nhiều nhất</h3>
+                <canvas id="chart-top-movies" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-lg-6">
+            <div class="panel chart-card">
+                <h3>Xu hướng xem 6 tháng</h3>
+                <canvas id="chart-monthly-views" height="220"></canvas>
+            </div>
+        </div>
+        <div class="col-12 col-lg-6">
+            <div class="panel chart-card">
+                <h3>Lượt xem 7 ngày</h3>
+                <canvas id="chart-views" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel table-modern mb-4">
+        <h3>Phim vừa thêm</h3>
+        <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0">
+                <thead><tr><th>Tiêu đề</th><th>Năm</th><th>IMDb</th><th>Lượt xem</th><th class="text-end">Tác vụ</th></tr></thead>
+                <tbody>
+                @foreach (var m in (IEnumerable<dynamic>) (ViewBag.RecentList ?? new List<dynamic>()))
+                {
+                    <tr>
+                        <td class="text-truncate" style="max-width:260px;">@m.Title</td>
+                        <td>@(m.Year ?? "-")</td>
+                        <td>@(m.Imdb?.ToString("0.0") ?? "-")</td>
+                        <td>@m.Views</td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-light" asp-area="Admin" asp-controller="Movies" asp-action="Edit" asp-route-id="@m.Id">Sửa</a>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<section class="mb-4">
+    <div class="row g-3">
+        <div class="col-12 col-lg-6">
+            <h2 class="section-title mb-1">Phân bố thể loại</h2>
+            <div class="section-bar mb-3"></div>
+            <div class="glass-card p-3">
+                <canvas id="chart-genres" height="200"></canvas>
+            </div>
+        </div>
+        <div class="col-12 col-lg-6">
+            <h2 class="section-title mb-1">Phim xem nhiều nhất</h2>
+            <div class="section-bar mb-3"></div>
+            <div class="glass-card p-3">
+                <canvas id="chart-top-movies" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="mb-4">
+    <h2 class="section-title mb-1">Xu hướng xem 6 tháng</h2>
+    <div class="section-bar mb-3"></div>
+    <div class="glass-card p-3">
+        <canvas id="chart-monthly-views" height="120"></canvas>
+    </div>
+</section>
+
+<section class="mb-4">
+    <h2 class="section-title mb-1">Phim vừa thêm</h2>
+    <div class="section-bar mb-3"></div>
+    <div class="glass-card p-3">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle">
+                <thead><tr><th>Tiêu đề</th><th>Năm</th><th>IMDb</th><th>Lượt xem</th><th class="text-end">Tác vụ</th></tr></thead>
+                <tbody>
+                @foreach (var m in (IEnumerable<dynamic>) (ViewBag.RecentList ?? new List<dynamic>()))
+                {
+                    <tr>
+                        <td class="text-truncate" style="max-width:260px;">@m.Title</td>
+                        <td>@(m.Year ?? "-")</td>
+                        <td>@(m.Imdb?.ToString("0.0") ?? "-")</td>
+                        <td>@m.Views</td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-light" asp-area="Admin" asp-controller="Movies" asp-action="Edit" asp-route-id="@m.Id">Sửa</a>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+ </section>
+
+<section class="mb-4">
+    <h2 class="section-title mb-1">Lượt xem 7 ngày</h2>
+    <div class="section-bar mb-3"></div>
+    <div class="glass-card p-3">
+        <canvas id="chart-views" height="120"></canvas>
+    </div>
+</section>
+
+@section Scripts{
+<script src="~/lib/chart.js/chart.umd.min.js"></script>
+<script>
+    // Chart colors
+    const colors = {
+        primary: '#a259d9',
+        secondary: '#7f51ff',
+        success: '#28a745',
+        info: '#17a2b8',
+        warning: '#ffc107',
+        danger: '#dc3545',
+        purple: '#6f42c1',
+        pink: '#e83e8c',
+        teal: '#20c997',
+        orange: '#fd7e14'
+    };
+
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: { color: '#ffffff' }
+            }
+        },
+        scales: {
+            x: { 
+                grid: { color: 'rgba(255,255,255,.08)' },
+                ticks: { color: '#ffffff' }
+            },
+            y: { 
+                grid: { color: 'rgba(255,255,255,.08)' },
+                ticks: { color: '#ffffff' }
+            }
+        }
+    };
+
+    // Genre distribution chart
+    (function(){
+        const ctx = document.getElementById('chart-genres');
+        if(!ctx) return;
+        
+        const genreData = @Html.Raw(Json.Serialize(ViewBag.GenreStats ?? new List<object>()));
+        if(!genreData || !genreData.length) return;
+        const labels = genreData.map(g => g.genre);
+        const data = genreData.map(g => g.count);
+        
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: [
+                        colors.primary, colors.secondary, colors.success, colors.info,
+                        colors.warning, colors.danger, colors.purple, colors.pink,
+                        colors.teal, colors.orange
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#0a0a23'
+                }]
+            },
+            options: {
+                ...chartOptions,
+                plugins: {
+                    ...chartOptions.plugins,
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#ffffff', padding: 20 }
+                    }
+                }
+            }
+        });
+    })();
+
+    // Top movies chart
+    (function(){
+        const ctx = document.getElementById('chart-top-movies');
+        if(!ctx) return;
+        
+        const movieData = @Html.Raw(Json.Serialize(ViewBag.TopMovies ?? new List<object>()));
+        if(!movieData || !movieData.length) return;
+        const labels = movieData.map(m => m.title.length > 20 ? m.title.substring(0, 20) + '...' : m.title);
+        const data = movieData.map(m => m.views);
+        
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Lượt xem',
+                    data: data,
+                    backgroundColor: colors.primary + '80',
+                    borderColor: colors.primary,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                ...chartOptions,
+                plugins: {
+                    ...chartOptions.plugins,
+                    legend: { display: false }
+                }
+            }
+        });
+    })();
+
+    // Monthly views trend
+    (function(){
+        const ctx = document.getElementById('chart-monthly-views');
+        if(!ctx) return;
+        
+        const monthlyData = @Html.Raw(Json.Serialize(ViewBag.MonthlyViews ?? new List<object>()));
+        if(!monthlyData || !monthlyData.length) return;
+        const labels = monthlyData.map(m => m.month);
+        const data = monthlyData.map(m => m.views);
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Lượt xem',
+                    data: data,
+                    borderColor: colors.secondary,
+                    backgroundColor: colors.secondary + '20',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                ...chartOptions,
+                plugins: {
+                    ...chartOptions.plugins,
+                    legend: { display: false }
+                }
+            }
+        });
+    })();
+
+    // 7-day views chart (existing)
+    (async function(){
+        const ctx = document.getElementById('chart-views');
+        if(!ctx) return;
+        try{
+            const res = await fetch('/admin/api/stats/getviewhits?days=7', { credentials:'same-origin' });
+            const payload = await res.json();
+            const labels = payload.labels || [];
+            const data = payload.data || [];
+            if(!labels.length || !data.length) return;
+            new Chart(ctx, { 
+                type:'line', 
+                data:{ 
+                    labels, 
+                    datasets:[{ 
+                        label:'Views', 
+                        data, 
+                        borderColor: colors.primary, 
+                        backgroundColor: colors.primary + '20',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }] 
+                }, 
+                options: {
+                    ...chartOptions,
+                    plugins: {
+                        ...chartOptions.plugins,
+                        legend: { display: false }
+                    }
+                }
+            });
+        }catch(e){ console.error(e); }
+    })();
+</script>
+}

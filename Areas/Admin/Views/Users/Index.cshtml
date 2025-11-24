@@ -1,0 +1,161 @@
+@model List<webxemphim.Data.ApplicationUser>
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<webxemphim.Data.ApplicationUser> UserManager
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Người dùng";
+}
+
+<section class="mb-4">
+    <h2 class="section-title mb-2">Người dùng</h2>
+    <div class="section-bar mb-3"></div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Search form -->
+    <div class="glass-card p-3 mb-3">
+        <form method="get" asp-area="Admin" asp-controller="Users" asp-action="Index" class="row g-2">
+            <div class="col-md-8">
+                <input type="text" name="search" class="form-control" placeholder="Tìm kiếm theo email..." value="@ViewBag.Search" />
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">Tìm kiếm</button>
+                @if (!string.IsNullOrEmpty(ViewBag.Search?.ToString()))
+                {
+                    <a asp-area="Admin" asp-controller="Users" asp-action="Index" class="btn btn-secondary w-100 mt-2">Xóa bộ lọc</a>
+                }
+            </div>
+        </form>
+    </div>
+
+    <div class="glass-card p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Xác thực</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var u in Model)
+                {
+                    var isLockedOut = u.LockoutEnd.HasValue && u.LockoutEnd.Value > DateTimeOffset.UtcNow;
+                    var isCurrentUser = UserManager.GetUserId(User) == u.Id;
+                    var isAdmin = await UserManager.IsInRoleAsync(u, "Admin");
+                    
+                    <tr class="@(isLockedOut ? "table-secondary" : "")">
+                        <td>
+                            @u.Email
+                            @if (isAdmin)
+                            {
+                                <span class="badge bg-primary ms-1">Admin</span>
+                            }
+                        </td>
+                        <td>
+                            @if (u.EmailConfirmed)
+                            {
+                                <span class="badge bg-success">Đã xác thực</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning">Chưa xác thực</span>
+                            }
+                        </td>
+                        <td>
+                            @if (isLockedOut)
+                            {
+                                <span class="badge bg-danger">Đã dừng hoạt động</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">Đang hoạt động</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm" role="group">
+                                @if (isLockedOut)
+                                {
+                                    <form method="post" asp-area="Admin" asp-controller="Users" asp-action="Enable" asp-route-id="@u.Id" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-success btn-sm" 
+                                                onclick="return confirm('Bạn có chắc muốn kích hoạt lại tài khoản @u.Email?');"
+                                                @(isCurrentUser ? "disabled title='Không thể thao tác trên tài khoản của chính mình'" : "")>
+                                            Kích hoạt
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form method="post" asp-area="Admin" asp-controller="Users" asp-action="Disable" asp-route-id="@u.Id" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-warning btn-sm" 
+                                                onclick="return confirm('Bạn có chắc muốn dừng hoạt động tài khoản @u.Email?');"
+                                                @(isCurrentUser ? "disabled title='Không thể thao tác trên tài khoản của chính mình'" : "")>
+                                            Dừng hoạt động
+                                        </button>
+                                    </form>
+                                }
+                                
+                                <form method="post" asp-area="Admin" asp-controller="Users" asp-action="Delete" asp-route-id="@u.Id" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-danger btn-sm" 
+                                            onclick="return confirm('Bạn có CHẮC CHẮN muốn XÓA tài khoản @u.Email? Hành động này không thể hoàn tác!');"
+                                            @(isCurrentUser ? "disabled title='Không thể xóa tài khoản của chính mình'" : "")>
+                                        Xóa
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    @{
+        var currentPage = (int)(ViewBag.Page ?? 1);
+        var pageSize = (int)(ViewBag.PageSize ?? 20);
+        var total = (int)(ViewBag.Total ?? 0);
+        var totalPages = (int)Math.Ceiling(total / (double)pageSize);
+    }
+    @if (totalPages > 1)
+    {
+        <nav class="mt-3">
+            <ul class="pagination pagination-sm">
+                <li class="page-item @(currentPage <= 1 ? "disabled" : null)">
+                    <a class="page-link" asp-area="Admin" asp-controller="Users" asp-action="Index" 
+                       asp-route-page="@(currentPage - 1)" 
+                       asp-route-pageSize="@pageSize"
+                       asp-route-search="@ViewBag.Search">Trước</a>
+                </li>
+                <li class="page-item disabled"><span class="page-link">Trang @currentPage/@totalPages</span></li>
+                <li class="page-item @(currentPage >= totalPages ? "disabled" : null)">
+                    <a class="page-link" asp-area="Admin" asp-controller="Users" asp-action="Index" 
+                       asp-route-page="@(currentPage + 1)" 
+                       asp-route-pageSize="@pageSize"
+                       asp-route-search="@ViewBag.Search">Sau</a>
+                </li>
+            </ul>
+        </nav>
+    }
+</section>
+
+

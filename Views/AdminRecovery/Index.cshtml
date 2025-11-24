@@ -1,0 +1,49 @@
+@{
+    ViewData["Title"] = "Khôi phục tài khoản Admin";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<section class="glass-card p-4">
+    <h2 class="section-title mb-2">Khôi phục tài khoản Admin</h2>
+    <div class="section-bar mb-3"></div>
+
+    <div class="alert alert-warning" role="alert">
+        <strong>Lưu ý:</strong> Chức năng này chỉ hoạt động khi hệ thống chưa có tài khoản admin nào. 
+        Nếu đã có admin, vui lòng đăng nhập với tài khoản admin đó.
+    </div>
+
+    @if (ViewBag.Success != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @Html.Raw(ViewBag.Success)
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @Html.Raw(ViewBag.Error)
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <form method="post" asp-controller="AdminRecovery" asp-action="CreateAdmin">
+        @Html.AntiForgeryToken()
+        
+        <div class="mb-3">
+            <label class="form-label" for="email">Email Admin</label>
+            <input type="email" name="email" id="email" class="form-control" value="admin@bmovie.local" autocomplete="email" />
+            <small class="form-text text-muted">Mặc định: admin@bmovie.local</small>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="password">Mật khẩu</label>
+            <input type="password" name="password" id="password" class="form-control" value="Admin@12345" autocomplete="current-password" />
+            <small class="form-text text-muted">Mặc định: Admin@12345</small>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Tạo tài khoản Admin</button>
+    </form>
+</section>
+

@@ -1,0 +1,13 @@
+{
+  "name": "bmovie-webxemphim",
+  "version": "1.0.0",
+  "description": "BMovie - Web Xem Phim",
+  "scripts": {
+    "install-gsap": "npm install gsap"
+  },
+  "dependencies": {
+    "gsap": "^3.12.5"
+  },
+  "devDependencies": {}
+}
+

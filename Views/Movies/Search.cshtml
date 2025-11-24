@@ -1,0 +1,219 @@
+@model List<webxemphim.Models.Movie>
+@{
+    ViewData["Title"] = "Tìm kiếm";
+    var q = Context.Request.Query["q"].ToString();
+}
+
+<section class="mb-4">
+    <form class="glass-card p-4" method="get" asp-controller="Movies" asp-action="Search">
+        <h3 class="mb-3">Tìm kiếm nâng cao</h3>
+        <div class="row g-3">
+            <!-- Basic Search -->
+            <div class="col-12 col-md-6">
+                <label class="form-label">Tên phim</label>
+                <div class="input-group">
+                    <input class="form-control" id="search-query" name="q" value="@q" placeholder="Nhập tên phim hoặc dùng giọng nói..." autocomplete="off" />
+                    <button class="btn btn-outline-light" type="button" id="voice-search-btn" title="Tìm kiếm bằng giọng nói">
+                        <i class="bi bi-mic"></i>
+                    </button>
+                    <button class="btn btn-outline-light" type="button" id="voice-search-stop-btn" title="Dừng ghi âm" style="display: none;">
+                        <i class="bi bi-mic-fill text-danger"></i>
+                    </button>
+                </div>
+                <div id="voice-status" class="text-muted small mt-1" style="display: none;"></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">Loại nội dung</label>
+                <select class="form-control" name="contentType">
+                    <option value="">Tất cả</option>
+                    <option value="@ContentType.Movie">Phim lẻ</option>
+                    <option value="@ContentType.TVShow">TV Series</option>
+                    <option value="@ContentType.Anime">Anime</option>
+                    <option value="@ContentType.Trailer">Trailer</option>
+                    <option value="@ContentType.BehindTheScenes">Behind the Scenes</option>
+                    <option value="@ContentType.Documentary">Phim tài liệu</option>
+                    <option value="@ContentType.ShortFilm">Phim ngắn</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">Thể loại</label>
+                <input class="form-control" name="genre" placeholder="Hành động, Tâm lý..." />
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">Quốc gia</label>
+                <input class="form-control" name="country" placeholder="US-UK, Korea..." />
+            </div>
+            
+            <!-- Advanced Search -->
+            <div class="col-6 col-md-3">
+                <label class="form-label">Năm sản xuất</label>
+                <input class="form-control" name="year" type="number" placeholder="2024" />
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">IMDb tối thiểu</label>
+                <input class="form-control" name="imdb" type="number" step="0.1" placeholder="7.0" />
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">Độ tuổi</label>
+                <select class="form-control" name="age">
+                    <option value="">Tất cả</option>
+                    <option value="P">P</option>
+                    <option value="13+">13+</option>
+                    <option value="16+">16+</option>
+                    <option value="18+">18+</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">Đạo diễn</label>
+                <input class="form-control" name="director" placeholder="Christopher Nolan..." />
+            </div>
+            
+            <!-- Cast and Date Range -->
+            <div class="col-12 col-md-6">
+                <label class="form-label">Diễn viên</label>
+                <input class="form-control" name="cast" placeholder="Leonardo DiCaprio, Tom Hanks..." />
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">Từ ngày</label>
+                <input class="form-control" name="releaseDateFrom" type="date" />
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">Đến ngày</label>
+                <input class="form-control" name="releaseDateTo" type="date" />
+            </div>
+            
+            <!-- Rating Range -->
+            <div class="col-6 col-md-3">
+                <label class="form-label">Đánh giá từ</label>
+                <input class="form-control" name="ratingFrom" type="number" step="0.1" placeholder="3.0" />
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">Đánh giá đến</label>
+                <input class="form-control" name="ratingTo" type="number" step="0.1" placeholder="5.0" />
+            </div>
+            
+            <!-- Submit Button -->
+            <div class="col-12">
+                <div class="d-flex gap-2">
+                    <button class="neon-btn" type="submit">
+                        <i class="fas fa-search me-2"></i>Tìm kiếm
+                    </button>
+                    <a class="btn btn-outline-light" href="@Url.Action("Search")">
+                        <i class="fas fa-refresh me-2"></i>Xóa bộ lọc
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</section>
+
+<section class="mb-5">
+    <h2 class="section-title mb-1">Kết quả</h2>
+    <div class="section-bar mb-3"></div>
+    <div class="row g-3">
+        @foreach (var m in Model)
+        {
+            <div class="col-6 col-md-3 col-lg-2">
+                @await Html.PartialAsync("~/Views/Shared/_MovieCard.cshtml", m)
+            </div>
+        }
+    </div>
+</section>
+
+<script>
+    // Voice Search
+    let recognition = null;
+    const voiceSearchBtn = document.getElementById('voice-search-btn');
+    const voiceSearchStopBtn = document.getElementById('voice-search-stop-btn');
+    const searchQueryInput = document.getElementById('search-query');
+    const voiceStatus = document.getElementById('voice-status');
+
+    // Check if browser supports Web Speech API
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'vi-VN'; // Vietnamese language
+
+        recognition.onstart = function() {
+            voiceSearchBtn.style.display = 'none';
+            voiceSearchStopBtn.style.display = 'block';
+            voiceStatus.style.display = 'block';
+            voiceStatus.textContent = 'Đang nghe... Hãy nói tên phim.';
+            voiceStatus.className = 'text-info small mt-1';
+        };
+
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            searchQueryInput.value = transcript;
+            voiceStatus.textContent = `Đã nhận: "${transcript}"`;
+            voiceStatus.className = 'text-success small mt-1';
+            
+            // Auto submit after 1 second
+            setTimeout(() => {
+                document.querySelector('form').submit();
+            }, 1000);
+        };
+
+        recognition.onerror = function(event) {
+            voiceStatus.style.display = 'block';
+            voiceStatus.textContent = 'Lỗi: ' + event.error;
+            voiceStatus.className = 'text-danger small mt-1';
+            voiceSearchBtn.style.display = 'block';
+            voiceSearchStopBtn.style.display = 'none';
+        };
+
+        recognition.onend = function() {
+            voiceSearchBtn.style.display = 'block';
+            voiceSearchStopBtn.style.display = 'none';
+            if (voiceStatus.textContent === 'Đang nghe... Hãy nói tên phim.') {
+                voiceStatus.style.display = 'none';
+            }
+        };
+
+        voiceSearchBtn.addEventListener('click', function() {
+            try {
+                recognition.start();
+            } catch (error) {
+                console.error('Error starting speech recognition:', error);
+                voiceStatus.style.display = 'block';
+                voiceStatus.textContent = 'Không thể bắt đầu nhận diện giọng nói. Vui lòng thử lại.';
+                voiceStatus.className = 'text-danger small mt-1';
+            }
+        });
+
+        voiceSearchStopBtn.addEventListener('click', function() {
+            recognition.stop();
+            voiceSearchBtn.style.display = 'block';
+            voiceSearchStopBtn.style.display = 'none';
+            voiceStatus.style.display = 'none';
+        });
+    } else {
+        // Browser doesn't support Web Speech API
+        voiceSearchBtn.style.display = 'none';
+        voiceSearchStopBtn.style.display = 'none';
+    }
+
+    // Auto-complete search suggestions
+    let searchTimeout;
+    searchQueryInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        if (query.length < 2) return;
+
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(async () => {
+            try {
+                const response = await fetch(`/api/movies/search?q=${encodeURIComponent(query)}&pageSize=5`);
+                if (response.ok) {
+                    const data = await response.json();
+                    // You can implement dropdown suggestions here if needed
+                    console.log('Search suggestions:', data);
+                }
+            } catch (error) {
+                console.error('Error fetching search suggestions:', error);
+            }
+        }, 300);
+    });
+</script>
+

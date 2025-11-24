@@ -1,0 +1,121 @@
+@{
+    ViewData["Title"] = "Kho sưu tập";
+}
+
+<link rel="stylesheet" href="~/css/home-modern.css" asp-append-version="true" />
+
+<section class="mb-4">
+    <div class="d-flex align-items-end justify-content-between mb-3">
+        <div>
+            <h2 class="section-title mb-1">Kho sưu tập</h2>
+            <div class="section-bar"></div>
+        </div>
+    </div>
+    <div class="glass-card p-3">
+        <ul class="nav nav-tabs" id="invTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-fav" data-bs-toggle="tab" data-bs-target="#panel-fav" type="button" role="tab">Yêu thích</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-watched" data-bs-toggle="tab" data-bs-target="#panel-watched" type="button" role="tab">Đã xem</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-rewards" data-bs-toggle="tab" data-bs-target="#panel-rewards" type="button" role="tab">Phần thưởng</button>
+            </li>
+        </ul>
+        <div class="tab-content p-3">
+            <div class="tab-pane fade show active" id="panel-fav" role="tabpanel">
+                @{
+                    var favorites = ViewBag.Favorites as IEnumerable<webxemphim.Models.UserInventoryItem> ?? new List<webxemphim.Models.UserInventoryItem>();
+                }
+                @if (favorites.Any())
+                {
+                    <div class="movie-scroll-container">
+                        <div class="movie-scroll-wrapper">
+                            @foreach (var item in favorites)
+                            {
+                                @if (item.Movie != null)
+                                {
+                                    <div class="movie-scroll-item position-relative" style="width: 200px;">
+                                        <div class="position-relative">
+                                            @await Html.PartialAsync("~/Views/Shared/_MovieCardModern.cshtml", item.Movie)
+                                            <div class="position-absolute top-0 end-0 m-2" style="z-index: 10;">
+                                                <form method="post" asp-controller="Inventory" asp-action="RemoveFavorite" asp-route-movieId="@item.MovieId" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-danger" style="border-radius: 50%; width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgba(220, 53, 69, 0.9); border: none; backdrop-filter: blur(5px);" title="Bỏ yêu thích" onclick="return confirm('Bạn có chắc muốn bỏ yêu thích phim này?')">
+                                                        <i class="fas fa-times" style="font-size: 12px;"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <p class="text-white-50">Bạn chưa có phim yêu thích nào.</p>
+                        <a href="@Url.Action("Index", "Home")" class="neon-btn">Khám phá phim</a>
+                    </div>
+                }
+            </div>
+            <div class="tab-pane fade" id="panel-watched" role="tabpanel">
+                @{
+                    var watched = ViewBag.Watched as IEnumerable<webxemphim.Models.UserInventoryItem> ?? new List<webxemphim.Models.UserInventoryItem>();
+                }
+                @if (watched.Any())
+                {
+                    <div class="movie-scroll-container">
+                        <div class="movie-scroll-wrapper">
+                            @foreach (var item in watched)
+                            {
+                                @if (item.Movie != null)
+                                {
+                                    <div class="movie-scroll-item position-relative" style="width: 200px;">
+                                        <div class="position-relative">
+                                            @await Html.PartialAsync("~/Views/Shared/_MovieCardModern.cshtml", item.Movie)
+                                            <div class="position-absolute top-0 end-0 m-2" style="z-index: 10;">
+                                                <form method="post" asp-controller="Inventory" asp-action="RemoveWatched" asp-route-movieId="@item.MovieId" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-danger" style="border-radius: 50%; width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgba(220, 53, 69, 0.9); border: none; backdrop-filter: blur(5px);" title="Xóa khỏi đã xem" onclick="return confirm('Bạn có chắc muốn xóa phim này khỏi danh sách đã xem?')">
+                                                        <i class="fas fa-times" style="font-size: 12px;"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <p class="text-white-50">Bạn chưa xem phim nào.</p>
+                        <a href="@Url.Action("Index", "Home")" class="neon-btn">Khám phá phim</a>
+                    </div>
+                }
+            </div>
+            <div class="tab-pane fade" id="panel-rewards" role="tabpanel">
+                <div class="row g-3">
+                    @foreach (var item in (IEnumerable<webxemphim.Models.UserInventoryItem>)ViewBag.Rewards)
+                    {
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <div class="glass-card p-3">
+                                <div class="fw-bold">@item.Type</div>
+                                <div class="text-white-50">@item.Payload</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="mt-3"></div>
+</section>
+
+

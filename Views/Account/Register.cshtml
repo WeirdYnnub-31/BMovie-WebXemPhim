@@ -1,0 +1,39 @@
+@{
+    ViewData["Title"] = "Đăng ký";
+}
+<section class="glass-card p-4" data-page="register">
+    <h2 class="section-title mb-2 animated-text">Đăng ký</h2>
+    <div class="section-bar mb-3"></div>
+    
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger" role="alert">
+            <ul class="mb-0">
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+    
+    <form method="post" asp-controller="Account" asp-action="Register">
+        @Html.AntiForgeryToken()
+        <div class="mb-3">
+            <label class="form-label" for="email">Email <span class="text-danger">*</span></label>
+            <input name="email" id="email" type="email" class="form-control" required autocomplete="email" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="displayName">Tên hiển thị</label>
+            <input name="displayName" id="displayName" class="form-control" autocomplete="name" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="password">Mật khẩu <span class="text-danger">*</span></label>
+            <input name="password" id="password" type="password" class="form-control" required minlength="6" autocomplete="new-password" />
+            <small class="form-text text-muted">Mật khẩu tối thiểu 6 ký tự</small>
+        </div>
+        <button class="neon-btn" type="submit">Tạo tài khoản</button>
+    </form>
+</section>
+
+

@@ -1,0 +1,101 @@
+@model List<webxemphim.Models.Feedback>
+@{
+    ViewData["Title"] = "Phản hồi của tôi";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Phản hồi của tôi</h2>
+        <a href="@Url.Action("Create", "Feedback")" class="btn btn-primary">Gửi phản hồi mới</a>
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info bg-glass border-0 rounded-4 text-center">
+            <p class="mb-0">Bạn chưa gửi phản hồi nào.</p>
+            <a href="@Url.Action("Create", "Feedback")" class="btn btn-primary mt-3">Gửi phản hồi đầu tiên</a>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var feedback in Model)
+            {
+                <div class="col-md-6 mb-3">
+                    <div class="card bg-glass border-0 rounded-4 h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">@feedback.Title</h5>
+                                <span class="badge @GetStatusBadgeClass(feedback.Status)">@GetStatusText(feedback.Status)</span>
+                            </div>
+                            <p class="text-muted small mb-2">
+                                <strong>Loại:</strong> @GetTypeText(feedback.Type)
+                                @if (feedback.Movie != null)
+                                {
+                                    <br /><strong>Phim:</strong> @feedback.Movie.Title
+                                }
+                            </p>
+                            <p class="card-text">@(feedback.Description.Length > 150 ? feedback.Description.Substring(0, 150) + "..." : feedback.Description)</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">@feedback.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                                <a href="@Url.Action("Details", "Feedback", new { id = feedback.Id })" class="btn btn-sm btn-outline-primary">Xem chi tiết</a>
+                            </div>
+                            @if (!string.IsNullOrEmpty(feedback.AdminResponse))
+                            {
+                                <div class="alert alert-success bg-glass border-0 rounded-4 mt-3 mb-0">
+                                    <strong>Phản hồi từ Admin:</strong><br />
+                                    @feedback.AdminResponse
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@functions {
+    string GetStatusBadgeClass(FeedbackStatus status)
+    {
+        return status switch
+        {
+            FeedbackStatus.Pending => "bg-warning",
+            FeedbackStatus.InProgress => "bg-info",
+            FeedbackStatus.Resolved => "bg-success",
+            FeedbackStatus.Rejected => "bg-danger",
+            FeedbackStatus.Duplicate => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+
+    string GetStatusText(FeedbackStatus status)
+    {
+        return status switch
+        {
+            FeedbackStatus.Pending => "Chờ xử lý",
+            FeedbackStatus.InProgress => "Đang xử lý",
+            FeedbackStatus.Resolved => "Đã xử lý",
+            FeedbackStatus.Rejected => "Từ chối",
+            FeedbackStatus.Duplicate => "Trùng lặp",
+            _ => "Không xác định"
+        };
+    }
+
+    string GetTypeText(FeedbackType type)
+    {
+        return type switch
+        {
+            FeedbackType.MovieError => "Phim không phát được",
+            FeedbackType.VideoQuality => "Chất lượng video kém",
+            FeedbackType.SubtitleError => "Lỗi phụ đề",
+            FeedbackType.AudioError => "Lỗi âm thanh",
+            FeedbackType.BugReport => "Báo lỗi website",
+            FeedbackType.FeatureRequest => "Yêu cầu tính năng mới",
+            FeedbackType.Suggestion => "Góp ý cải tiến",
+            FeedbackType.Other => "Khác",
+            _ => "Không xác định"
+        };
+    }
+}
+

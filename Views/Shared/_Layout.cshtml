@@ -1,0 +1,297 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - bmovie</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    @* Bootstrap CSS from CDN - local files not found *@
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+    @* Font Awesome Icons from CDN *@
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/modern.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/webxemphim.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/navbar-fix.css" asp-append-version="true" />
+    <base href="~/" />
+    <style>
+        /* CRITICAL: Ensure header and navbar are always visible - MUST be first */
+        header {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+            visibility: visible !important;
+            display: block !important;
+            position: relative !important;
+            z-index: 1030 !important;
+        }
+        
+        nav.navbar {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+            visibility: visible !important;
+            display: flex !important;
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 1030 !important;
+        }
+        
+        .navbar-brand,
+        .nav-link,
+        .dropdown-toggle,
+        .navbar .btn,
+        .navbar-toggler {
+            opacity: 1 !important;
+            transform: translateX(0) translateY(0) !important;
+            visibility: visible !important;
+            display: block !important;
+        }
+        
+        .navbar-collapse {
+            display: flex !important;
+            visibility: visible !important;
+        }
+        
+        /* Prevent GSAP from hiding header */
+        header[style*="opacity: 0"],
+        nav.navbar[style*="opacity: 0"] {
+            opacity: 1 !important;
+        }
+        
+        header[style*="transform: translateY(-"],
+        nav.navbar[style*="transform: translateY(-"] {
+            transform: translateY(0) !important;
+        }
+    </style>
+    @await Html.PartialAsync("~/Views/Shared/_SeoMeta.cshtml")
+</head>
+<body class="theme-dark" style="min-height:100vh;">
+    <header class="mb-2">
+        <nav class="navbar navbar-expand-lg rounded-4 p-2 px-md-3 my-2 w-100 position-sticky top-0" style="width:100%; z-index:1030;">
+            <div class="container-fluid px-3">
+                <a class="navbar-brand d-flex align-items-center me-3" asp-area="" asp-controller="Home" asp-action="Index">
+                    <span class="brand-mark me-2">🐰</span>
+                    <span class="fw-bold text-white fs-4">Bmovie</span>
+                </a>
+                <div class="collapse navbar-collapse" id="mainNavbar">
+                    @await Component.InvokeAsync("Navigation")
+                    <form class="d-flex me-3" role="search" asp-controller="Movies" asp-action="Search" method="get">
+                        <div class="input-group">
+                            <input class="form-control me-2 search-input rounded-pill px-4" id="navbar-search-query" type="search" name="q" placeholder="Tìm kiếm phim..." aria-label="Search" autocomplete="off">
+                        </div>
+                        <button class="btn btn-primary rounded-pill" type="submit">Tìm</button>
+                    </form>
+                    <div class="d-flex align-items-center gap-2">
+                        <button id="bm-theme-toggle" class="btn btn-outline-light btn-sm rounded-pill theme-toggle-btn" type="button" title="Chuyển giao diện" onclick="bmToggleTheme()" aria-label="Chuyển đổi chế độ sáng/tối">
+                            <span class="theme-icon">🌙</span>
+                        </button>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-light rounded-pill dropdown-toggle d-flex align-items-center gap-2 me-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="userMenuButton">
+                                @await Component.InvokeAsync("UserMenu")
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end rounded-4 p-2 mt-1">
+                                @if (!User.Identity?.IsAuthenticated ?? true)
+                                {
+                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="Login">Đăng nhập</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="Register">Đăng ký</a></li>
+                                }
+                                else
+                                {
+                                    <li><a class="dropdown-item" asp-controller="Profile" asp-action="Index">Trang cá nhân</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Inventory" asp-action="Index">Kho sưu tập</a></li>
+                                    <li><a class="dropdown-item" asp-controller="WatchHistory" asp-action="Index">Lịch sử xem</a></li>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <li><a class="dropdown-item" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Admin Panel</a></li>
+                                    }
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li>
+                                        <form method="post" asp-controller="Account" asp-action="Logout">
+                                            <button class="dropdown-item text-danger" type="submit">Đăng xuất</button>
+                                        </form>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container-fluid w-100 p-0 rounded-4 mb-4">
+        <main role="main" class="pb-5 rounded-4 p-0 p-md-5">
+            @RenderBody()
+        </main>
+    </div>
+    <footer class="p-0 mt-auto">
+        <div class="container-fluid py-4 d-flex flex-column flex-lg-row justify-content-between align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2">
+                <span class="brand-mark small">b</span>
+                <span class="text-white-50">&copy; 2025 bmovie — Thương hiệu Việt</span>
+            </div>
+            <div class="d-flex flex-wrap gap-3">
+                <a class="footer-link" asp-page="/About">Giới thiệu</a>
+                <a class="footer-link" asp-page="/Faq">Hỏi-Đáp</a>
+                <a class="footer-link" asp-page="/Privacy">Bảo mật</a>
+                <a class="footer-link" asp-page="/Terms">Điều khoản</a>
+                <a class="footer-link" asp-page="/Contact">Liên hệ</a>
+            </div>
+        </div>
+    </footer>
+    @* Bootstrap and jQuery from CDN - local files not found *@
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    @* GSAP Core - Load from CDN (UMD version) *@
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    @* GSAP Free Plugins - Only load free plugins available on CDN (UMD version) *@
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollToPlugin.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/TextPlugin.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/Flip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/Observer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/Draggable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/MotionPathPlugin.min.js"></script>
+    @* Note: Premium plugins (ScrollSmoother, SplitText, ScrambleTextPlugin, etc.) require Club GreenSock membership
+        and are not available on public CDN. Code gracefully handles their absence. *@
+    @* Register GSAP plugins immediately after loading *@
+    <script>
+        // Register GSAP plugins immediately after loading
+        if (typeof gsap !== 'undefined') {
+            if (typeof ScrollTrigger !== 'undefined') {
+                gsap.registerPlugin(ScrollTrigger);
+            }
+            if (typeof ScrollToPlugin !== 'undefined') {
+                gsap.registerPlugin(ScrollToPlugin);
+            }
+            if (typeof TextPlugin !== 'undefined') {
+                gsap.registerPlugin(TextPlugin);
+            }
+            if (typeof Flip !== 'undefined') {
+                gsap.registerPlugin(Flip);
+            }
+            if (typeof Observer !== 'undefined') {
+                gsap.registerPlugin(Observer);
+            }
+            if (typeof Draggable !== 'undefined') {
+                gsap.registerPlugin(Draggable);
+            }
+            if (typeof MotionPathPlugin !== 'undefined') {
+                gsap.registerPlugin(MotionPathPlugin);
+            }
+            console.log('GSAP plugins registered');
+        }
+    </script>
+    <script src="~/js/gsap-plugins-setup.js" asp-append-version="true"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/bmovie.ui.js" asp-append-version="true"></script>
+    <script src="~/js/gsap-animations.js" asp-append-version="true"></script>
+    <script src="~/js/page-specific-animations.js" asp-append-version="true"></script>
+    <script src="~/js/theme-toggle-enhanced.js" asp-append-version="true"></script>
+    <script>
+        // CRITICAL: Ensure header/navbar visibility immediately - MUST run first
+        (function() {
+            'use strict';
+            function ensureHeaderVisibility() {
+                const header = document.querySelector('header');
+                const navbar = document.querySelector('nav.navbar');
+                
+                if (header) {
+                    // Use setProperty with important flag
+                    header.style.setProperty('opacity', '1', 'important');
+                    header.style.setProperty('transform', 'translateY(0)', 'important');
+                    header.style.setProperty('visibility', 'visible', 'important');
+                    header.style.setProperty('display', 'block', 'important');
+                    header.style.setProperty('position', 'relative', 'important');
+                    header.style.setProperty('z-index', '1030', 'important');
+                    
+                    // Ensure all navbar items are visible
+                    const navbarItems = header.querySelectorAll('.navbar-brand, .nav-link, .dropdown-toggle, .btn, .navbar-toggler');
+                    navbarItems.forEach(item => {
+                        item.style.setProperty('opacity', '1', 'important');
+                        item.style.setProperty('transform', 'translateX(0) translateY(0)', 'important');
+                        item.style.setProperty('visibility', 'visible', 'important');
+                    });
+                }
+                
+                if (navbar) {
+                    navbar.style.setProperty('opacity', '1', 'important');
+                    navbar.style.setProperty('transform', 'translateY(0)', 'important');
+                    navbar.style.setProperty('visibility', 'visible', 'important');
+                    navbar.style.setProperty('display', 'flex', 'important');
+                    navbar.style.setProperty('position', 'sticky', 'important');
+                    navbar.style.setProperty('top', '0', 'important');
+                    navbar.style.setProperty('z-index', '1030', 'important');
+                    
+                    // Ensure all navbar items are visible
+                    const navbarItems = navbar.querySelectorAll('.navbar-brand, .nav-link, .dropdown-toggle, .btn, .navbar-toggler');
+                    navbarItems.forEach(item => {
+                        item.style.setProperty('opacity', '1', 'important');
+                        item.style.setProperty('transform', 'translateX(0) translateY(0)', 'important');
+                        item.style.setProperty('visibility', 'visible', 'important');
+                    });
+                    
+                    // Ensure navbar collapse is visible
+                    const navbarCollapse = navbar.querySelector('.navbar-collapse');
+                    if (navbarCollapse) {
+                        navbarCollapse.style.setProperty('display', 'flex', 'important');
+                        navbarCollapse.style.setProperty('visibility', 'visible', 'important');
+                    }
+                }
+            }
+            
+            // Run immediately - before any other scripts
+            ensureHeaderVisibility();
+            
+            // Also run on DOMContentLoaded
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', ensureHeaderVisibility);
+            } else {
+                ensureHeaderVisibility();
+            }
+            
+            // Run multiple times to catch any late-loading content or GSAP animations
+            setTimeout(ensureHeaderVisibility, 10);
+            setTimeout(ensureHeaderVisibility, 50);
+            setTimeout(ensureHeaderVisibility, 100);
+            setTimeout(ensureHeaderVisibility, 200);
+            setTimeout(ensureHeaderVisibility, 500);
+            
+            // Watch for any changes that might hide header
+            if (typeof MutationObserver !== 'undefined') {
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                            const target = mutation.target;
+                            if (target.tagName === 'HEADER' || target.classList.contains('navbar')) {
+                                ensureHeaderVisibility();
+                            }
+                        }
+                    });
+                });
+                
+                // Start observing when DOM is ready
+                if (document.body) {
+                    observer.observe(document.body, {
+                        attributes: true,
+                        attributeFilter: ['style'],
+                        subtree: true,
+                        childList: true
+                    });
+                } else {
+                    document.addEventListener('DOMContentLoaded', function() {
+                        observer.observe(document.body, {
+                            attributes: true,
+                            attributeFilter: ['style'],
+                            subtree: true,
+                            childList: true
+                        });
+                    });
+                }
+            }
+        })();
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+    @* Blazor Server scripts - required for interactive components *@
+    <script src="_framework/blazor.server.js"></script>
+</body>
+</html>

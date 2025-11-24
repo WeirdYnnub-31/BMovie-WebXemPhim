@@ -1,0 +1,391 @@
+/* General Body Styles */
+body {
+    background-color: #121212;
+    color: #ffffff;
+    transition: background-color 0.35s ease, color 0.35s ease;
+}
+.theme-light body,
+body.theme-light {
+    background-color: #f5f6fb;
+    color: #121212;
+}
+
+/* Navbar Styles */
+.navbar-solid {
+    background-color: #1f1f1f;
+    border-bottom: 1px solid #333;
+}
+
+.navbar-brand .brand-mark {
+    font-size: 1.5rem;
+}
+
+.navbar-brand .fw-bold {
+    font-size: 1.25rem;
+}
+
+/* Main Content Styles */
+main {
+    background-color: #181818;
+    padding: 2rem;
+    border-radius: 24px;
+    transition: background-color 0.35s ease, color 0.35s ease, box-shadow 0.35s ease;
+}
+
+/* Footer Styles */
+.footer-solid {
+    background-color: #1f1f1f;
+    border-top: 1px solid #333;
+    padding: 2rem 0;
+}
+
+.footer-link {
+    color: #aaa;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.footer-link:hover {
+    color: #fff;
+}
+
+/* Modal Styles */
+.modal-bm .dialog {
+    background-color: #2c2c2c;
+    border: 1px solid #444;
+}
+
+.close-btn {
+    color: #aaa;
+}
+
+.form-control {
+    background-color: #1f1f1f;
+    border: 1px solid #444;
+    color: #fff;
+}
+
+.btn-primary {
+    background-color: #6200ee;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #3700b3;
+}
+
+/* Movie Card Styles */
+.movie-card-modern {
+    background-color: #2c2c2c;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s;
+}
+
+.movie-card-modern:hover {
+    transform: translateY(-5px);
+}
+
+.movie-card-poster {
+    position: relative;
+}
+
+.movie-card-poster img {
+    width: 100%;
+    height: auto;
+}
+
+.movie-card-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    transition: opacity 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.movie-card-modern:hover .movie-card-overlay {
+    opacity: 1;
+}
+
+.movie-card-btn {
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    text-decoration: none;
+    margin: 0 0.5rem;
+}
+
+.movie-card-info {
+    padding: 1rem;
+}
+
+.movie-card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.movie-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+/* Hero Section Styles */
+.hero-section {
+    position: relative;
+    min-height: 600px;
+    display: flex;
+    align-items: center;
+    padding: 4rem 0;
+}
+
+.hero-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -1;
+    opacity: 0.3;
+}
+
+.hero-content {
+    max-width: 600px;
+}
+
+.hero-title {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.hero-description {
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+}
+
+.hero-buttons .btn {
+    margin-right: 1rem;
+}
+
+/* Movie Section Styles */
+.movie-section {
+    margin-bottom: 3rem;
+}
+
+.movie-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.movie-section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.movie-section-see-all {
+    color: #aaa;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.movie-section-see-all:hover {
+    color: #fff;
+}
+
+.movie-scroll-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.movie-scroll-wrapper {
+    display: flex;
+    gap: 1.5rem;
+}
+
+/* ===== Theme Light Overrides (Improved Palette) ===== */
+body.theme-light,
+.theme-light body {
+    background-color: #f8f9fa; /* Softer background */
+    color: #212529; /* Main text color */
+}
+
+body.theme-light main {
+    background-color: #ffffff; /* White for main content area */
+    color: #212529;
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.1); /* Softer shadow */
+}
+
+body.theme-light .glass-card,
+body.theme-light .card,
+body.theme-light .admin-card,
+body.theme-light .section-card {
+    background-color: #ffffff;
+    color: #212529;
+    border: 1px solid #dee2e6; /* Standard border color */
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05); /* Subtle shadow */
+    backdrop-filter: blur(14px);
+}
+
+body.theme-light .movie-card-modern {
+    background-color: #ffffff;
+    color: #212529;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+}
+
+body.theme-light .movie-card-info,
+body.theme-light .movie-card-title {
+    color: #212529;
+}
+
+body.theme-light .movie-card-meta {
+    color: #6c757d; /* Muted text */
+}
+
+body.theme-light .movie-card-btn {
+    background-color: rgba(33, 37, 41, 0.85); /* Darker, less saturated overlay button */
+    color: #ffffff;
+}
+
+body.theme-light .movie-card-overlay {
+    background-color: rgba(33, 37, 41, 0.6);
+}
+
+body.theme-light .hero-section {
+    color: #212529;
+}
+body.theme-light .hero-description {
+    color: #495057; /* Slightly darker than muted */
+}
+
+body.theme-light .movie-section-title,
+body.theme-light .section-title {
+    color: #212529;
+}
+body.theme-light .movie-section-subtitle,
+body.theme-light .text-white-50 {
+    color: #6c757d !important; /* Muted text */
+}
+
+body.theme-light .movie-section-see-all {
+    color: #6c757d;
+}
+body.theme-light .movie-section-see-all:hover {
+    color: #0d6efd; /* Primary blue */
+}
+
+body.theme-light .footer-solid {
+    background-color: #ffffff;
+    border-top: 1px solid #dee2e6;
+    color: #212529;
+}
+body.theme-light .footer-link {
+    color: #6c757d;
+}
+body.theme-light .footer-link:hover {
+    color: #0d6efd; /* Primary blue */
+}
+
+body.theme-light .modal-bm .dialog,
+body.theme-light .form-control,
+body.theme-light .search-input {
+    background-color: #ffffff;
+    border: 1px solid #ced4da;
+    color: #212529;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.075);
+}
+body.theme-light .form-control::placeholder,
+body.theme-light .search-input::placeholder {
+    color: #6c757d;
+}
+
+body.theme-light .btn-primary {
+    background-color: #0d6efd; /* Primary blue */
+    border-color: #0d6efd;
+    box-shadow: 0 0.5rem 1rem rgba(13, 110, 253, 0.25); /* Softer shadow */
+}
+
+body.theme-light .btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+body.theme-light .recommendations-special,
+body.theme-light .movie-section,
+body.theme-light .movie-section-modern {
+    color: #212529;
+}
+
+body.theme-light .badge-text,
+body.theme-light .hero-badge {
+    color: #0d6efd; /* Primary blue */
+    background: rgba(13, 110, 253, 0.1); /* Primary blue, transparent */
+}
+
+body.theme-light .hero-main-panel,
+body.theme-light .hero-scene-panel {
+    background: rgba(255, 255, 255, 0.85);
+    color: #212529;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.08);
+}
+
+body.theme-light .hero-category-label {
+    color: #6c757d;
+}
+
+body.theme-light .hero-category-pill {
+    color: #495057;
+    border-color: transparent;
+}
+
+body.theme-light .hero-category-pill.active,
+body.theme-light .hero-category-pill:hover {
+    color: #212529;
+    border-color: #ff3366;
+    background: rgba(255, 51, 102, 0.12);
+}
+
+body.theme-light .hero-icon-buttons button {
+    border-color: rgba(0, 0, 0, 0.08);
+    color: #212529;
+    background: rgba(0, 0, 0, 0.04);
+}
+
+body.theme-light .hero-btn-secondary {
+    color: #212529;
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+body.theme-light .hero-scene-card {
+    border-color: rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.6);
+}
+
+body.theme-light .hero-scene-meta-line {
+    color: #495057;
+}
+
+body.theme-light .hero-scene-tags span {
+    border-color: rgba(0, 0, 0, 0.15);
+    color: #495057;
+}
+
+body.theme-light .hero-scene-cta {
+    color: rgba(0, 0, 0, 0.35);
+}

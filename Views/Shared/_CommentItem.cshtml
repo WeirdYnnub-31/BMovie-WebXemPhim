@@ -1,0 +1,159 @@
+@model webxemphim.Models.Comment
+@{
+    var isReply = Model.ParentCommentId.HasValue;
+    var marginLeft = isReply ? "ms-4" : "";
+}
+
+<div class="comment-item @marginLeft mb-3" data-comment-id="@Model.Id">
+    <div class="glass-card p-3">
+        <div class="d-flex align-items-start gap-2 mb-2">
+            <div class="avatar-circle" style="width: 32px; height: 32px; font-size: 12px;">
+                @(Model.User?.Email?.FirstOrDefault().ToString().ToUpper() ?? "U")
+            </div>
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="fw-bold small">@(Model.User?.Email ?? "Anonymous")</span>
+                    <span class="text-white-50 small">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+                <p class="mb-2 text-white-50">@Model.Content</p>
+                
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-sm btn-outline-light like-btn" data-comment-id="@Model.Id">
+                        👍 @Model.Likes
+                    </button>
+                    <button class="btn btn-sm btn-outline-light dislike-btn" data-comment-id="@Model.Id">
+                        👎 @Model.Dislikes
+                    </button>
+                    @if (!isReply)
+                    {
+                        <button class="btn btn-sm btn-outline-light reply-btn" data-comment-id="@Model.Id">
+                            Trả lời
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reply form (hidden by default) -->
+    <div class="reply-form mt-2" style="display: none;" data-parent-id="@Model.Id">
+        <form method="post" asp-controller="Comments" asp-action="Create" class="glass-card p-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="movieId" value="@ViewBag.MovieId" />
+            <input type="hidden" name="parentCommentId" value="@Model.Id" />
+            <div class="mb-2">
+                <textarea name="content" class="form-control" rows="2" placeholder="Viết phản hồi..." required></textarea>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-sm neon-btn">Gửi phản hồi</button>
+                <button type="button" class="btn btn-sm btn-outline-light cancel-reply">Hủy</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Replies -->
+    @if (Model.Replies?.Any() == true)
+    {
+        <div class="replies mt-2">
+            @foreach (var reply in Model.Replies.OrderBy(r => r.CreatedAt))
+            {
+                @await Html.PartialAsync("~/Views/Shared/_CommentItem.cshtml", reply)
+            }
+        </div>
+    }
+</div>
+
+<style>
+.comment-item {
+    position: relative;
+}
+
+.reply-form {
+    margin-left: 20px;
+}
+
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #0b0b1e;
+    font-weight: 700;
+    font-size: 12px;
+    border: 2px solid rgba(162, 89, 217, 0.3);
+    transition: all 0.2s ease;
+}
+
+.avatar-circle:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 8px rgba(162, 89, 217, 0.4);
+}
+
+.like-btn:hover, .dislike-btn:hover {
+    transform: scale(1.05);
+}
+
+.reply-btn:hover {
+    background-color: var(--accent);
+    border-color: var(--accent);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Reply button functionality
+    document.querySelectorAll('.reply-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const commentId = this.dataset.commentId;
+            const replyForm = document.querySelector(`[data-parent-id="${commentId}"]`);
+            if (replyForm) {
+                replyForm.style.display = replyForm.style.display === 'none' ? 'block' : 'none';
+            }
+        });
+    });
+
+    // Cancel reply button
+    document.querySelectorAll('.cancel-reply').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const replyForm = this.closest('.reply-form');
+            if (replyForm) {
+                replyForm.style.display = 'none';
+                replyForm.querySelector('textarea').value = '';
+            }
+        });
+    });
+
+    // Like/Dislike functionality
+    document.querySelectorAll('.like-btn, .dislike-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const commentId = this.dataset.commentId;
+            const isLike = this.classList.contains('like-btn');
+            const action = isLike ? 'Like' : 'Dislike';
+            
+            try {
+                const response = await fetch(`/Comments/${action}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: `commentId=${commentId}`
+                });
+                
+                const result = await response.json();
+                
+                if (isLike) {
+                    this.innerHTML = `👍 ${result.likes}`;
+                } else {
+                    this.innerHTML = `👎 ${result.dislikes}`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    });
+});
+</script>

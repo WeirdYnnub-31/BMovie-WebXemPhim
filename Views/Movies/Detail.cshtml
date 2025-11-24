@@ -1,0 +1,232 @@
+@model webxemphim.Models.Movie
+@using webxemphim.Models
+@{
+    ViewData["Title"] = Model.Title;
+    var related = ViewBag.Related as List<Movie> ?? new();
+    var topByViews = ViewBag.TopByViews as List<Movie> ?? new();
+    var comments = ViewBag.ApprovedComments as List<Comment> ?? new();
+    var avgRating = ViewBag.AverageRating is double d ? d : (Model.Imdb ?? 0);
+    var totalRatings = ViewBag.TotalRatings is int tr ? tr : 0;
+    var heroBg = string.IsNullOrWhiteSpace(Model.PosterUrl) ? "/img/hero-placeholder.jpg" : Model.PosterUrl;
+    ViewData["Description"] = (Model.Description ?? "Xem phim tại bmovie").Length > 160
+        ? (Model.Description ?? "Xem phim tại bmovie").Substring(0, 160)
+        : (Model.Description ?? "Xem phim tại bmovie");
+    ViewData["Image"] = Model.PosterUrl ?? Url.Content("/favicon.ico");
+}
+
+<link rel="stylesheet" href="~/css/movie-detail-watch.css" asp-append-version="true" />
+
+<div class="movie-page-root">
+    <section class="movie-hero" style="--hero:url('@heroBg');">
+        <style>
+            .movie-hero::after { background-image: linear-gradient(120deg, rgba(12,10,25,.8), rgba(50,15,72,.8)), url('@heroBg'); }
+        </style>
+        <div class="movie-hero-content">
+            <div class="movie-hero-poster">
+                <img src="@(string.IsNullOrWhiteSpace(Model.PosterUrl) ? "/favicon.ico" : $"/img/resize?url={System.Net.WebUtility.UrlEncode(Model.PosterUrl)}&w=500&q=80")" alt="@Model.Title" />
+            </div>
+            <div class="movie-hero-text">
+                <h1>@Model.Title</h1>
+                <div class="hero-meta">
+                    @if (Model.Imdb.HasValue)
+                    {
+                        <span class="hero-chip">⭐ @Model.Imdb.Value.ToString("0.0") IMDb</span>
+                    }
+                    @if (Model.Year.HasValue)
+                    {
+                        <span class="hero-chip"><i class="bi bi-calendar-event"></i> @Model.Year</span>
+                    }
+                    @if (Model.DurationMinutes.HasValue)
+                    {
+                        <span class="hero-chip"><i class="bi bi-clock"></i> @Model.DurationMinutes phút</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.AgeRating))
+                    {
+                        <span class="hero-chip"><i class="bi bi-shield-check"></i> @Model.AgeRating</span>
+                    }
+                </div>
+                <p>@(string.IsNullOrWhiteSpace(Model.Description) ? "Khám phá bộ phim đặc sắc với cốt truyện hấp dẫn và diễn xuất cuốn hút." : Model.Description)</p>
+                <div class="hero-actions">
+                    <a class="btn btn-watch-now" asp-controller="Movies" asp-action="Watch" asp-route-slug="@Model.Slug">
+                        ▶️ Xem ngay
+                    </a>
+                    @if (!string.IsNullOrWhiteSpace(Model.TrailerUrl))
+                    {
+                        <button class="btn btn-outline-ghost" type="button" data-bs-toggle="modal" data-bs-target="#trailerModal">
+                            Trailer
+                        </button>
+                    }
+                    <form method="post" asp-controller="Inventory" asp-action="AddFavorite" asp-route-movieId="@Model.Id" class="d-inline">
+                        <button class="btn btn-outline-ghost" type="submit">❤️ Yêu thích</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="movie-action-bar">
+        <div class="action-pill"><i class="bi bi-heart"></i> Thêm vào yêu thích</div>
+        <div class="action-pill"><i class="bi bi-plus-circle"></i> Thêm vào danh sách</div>
+        <div class="action-pill"><i class="bi bi-share"></i> Chia sẻ</div>
+        <div class="action-pill"><i class="bi bi-chat-dots"></i> @(comments.Count) Bình luận</div>
+        <div class="action-pill"><i class="bi bi-star"></i> Đánh giá @totalRatings</div>
+    </div>
+
+    <div class="movie-tabs-wrapper">
+        <ul class="nav nav-pills movie-tabs" id="movieTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-episodes-tab" data-bs-toggle="pill" data-bs-target="#tab-episodes" type="button" role="tab">Tập phim</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-gallery-tab" data-bs-toggle="pill" data-bs-target="#tab-gallery" type="button" role="tab">Gallery</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-cast-tab" data-bs-toggle="pill" data-bs-target="#tab-cast" type="button" role="tab">Diễn viên</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-suggest-tab" data-bs-toggle="pill" data-bs-target="#tab-suggest" type="button" role="tab">Đề xuất</button>
+            </li>
+        </ul>
+        <div class="tab-content" id="movieTabsContent">
+            <div class="tab-pane fade show active" id="tab-episodes" role="tabpanel">
+                <div class="source-card">
+                    <div>
+                        <div class="fw-bold">Gã Fran</div>
+                        <small>Chọn nguồn phát tốt nhất • Vietsub Full HD</small>
+                    </div>
+                    <a class="btn btn-watch-now" asp-controller="Movies" asp-action="Watch" asp-route-slug="@Model.Slug">
+                        Xem bản này
+                    </a>
+                </div>
+                @if (Model.IsSeries)
+                {
+                    <div class="mt-3">
+                        <div class="fw-semibold mb-2 text-white">Danh sách tập</div>
+                        <div class="episodes-grid">
+                            @foreach (var ep in Enumerable.Range(1, 6))
+                            {
+                                <span class="episode-btn">Tập @ep</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="tab-pane fade" id="tab-gallery" role="tabpanel">
+                <p class="text-white-50 mb-0">Gallery sẽ được cập nhật sớm.</p>
+            </div>
+            <div class="tab-pane fade" id="tab-cast" role="tabpanel">
+                @if (!string.IsNullOrWhiteSpace(Model.Cast))
+                {
+                    <ul class="list-unstyled mb-0 text-white-50">
+                        @foreach (var c in Model.Cast.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Take(10))
+                        {
+                            <li class="mb-2">🎬 @c</li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p class="text-white-50 mb-0">Chưa có thông tin diễn viên.</p>
+                }
+            </div>
+            <div class="tab-pane fade" id="tab-suggest" role="tabpanel">
+                <div class="row g-3">
+                    @foreach (var movie in related.Take(6))
+                    {
+                        <div class="col-6 col-md-4">
+                            <a class="text-decoration-none sidebar-movie" asp-controller="Movies" asp-action="Detail" asp-route-slug="@movie.Slug">
+                                <img src="@(string.IsNullOrWhiteSpace(movie.PosterUrl)?"/favicon.ico":$"/img/resize?url={System.Net.WebUtility.UrlEncode(movie.PosterUrl)}&w=200&q=70")" alt="@movie.Title" />
+                                <div>
+                                    <div class="fw-semibold">@movie.Title</div>
+                                    <small class="text-white-50">@movie.Year</small>
+                                </div>
+                            </a>
+                        </div>
+                    }
+                    @if (!related.Any())
+                    {
+                        <p class="text-white-50 mb-0">Chưa có đề xuất tương tự.</p>
+                    }
+                </div>
+            </div>
+        </div>
+                </div>
+                
+    <div class="detail-layout">
+        <div>
+            <section class="comments-block">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="mb-0 fw-semibold">Bình luận</h3>
+                    <div class="hero-chip">👥 @comments.Count bình luận</div>
+                </div>
+                @if (TempData["CommentNotice"] != null)
+                {
+                    <div class="alert alert-info bg-transparent border-light text-white">@TempData["CommentNotice"]</div>
+                }
+                <div class="comment-form mb-4">
+                    <form method="post" asp-controller="Comments" asp-action="Create">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="movieId" value="@Model.Id" />
+                        <textarea name="content" rows="3" class="form-control" placeholder="Viết bình luận..." maxlength="1000"></textarea>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <small class="text-white-50 comment-counter">0/1000</small>
+                            <button class="btn btn-watch-now" type="submit" style="padding:0.5rem 1.5rem;">Gửi</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="comments-list">
+                    @if (comments.Any())
+                    {
+                        @foreach (var c in comments)
+                        {
+                            @await Html.PartialAsync("~/Views/Shared/_CommentItem.cshtml", c)
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-white-50">
+                            Chưa có bình luận nào. Hãy là người đầu tiên!
+                        </div>
+                    }
+                </div>
+            </section>
+        </div>
+        <aside class="detail-sidebar">
+            <div class="sidebar-card">
+                <h4>Top đề xuất (lượt xem)</h4>
+                @foreach (var m in topByViews.Take(6))
+                {
+                    <a class="sidebar-movie" asp-controller="Movies" asp-action="Detail" asp-route-slug="@m.Slug">
+                        <img src="@(string.IsNullOrWhiteSpace(m.PosterUrl)?"/favicon.ico":$"/img/resize?url={System.Net.WebUtility.UrlEncode(m.PosterUrl)}&w=150&q=70")" alt="@m.Title" />
+                        <div>
+                            <div class="fw-semibold">@m.Title</div>
+                            <small class="text-white-50">@((m.Year?.ToString()) ?? "-") • ⭐ @((m.Imdb?.ToString("0.0")) ?? "-")</small>
+                        </div>
+                    </a>
+                }
+            </div>
+        </aside>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.TrailerUrl))
+{
+    <div class="modal fade" id="trailerModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content bg-dark">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">Trailer - @Model.Title</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="ratio ratio-16x9">
+                        <iframe src="@Model.TrailerUrl" allowfullscreen frameborder="0"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+

@@ -1,0 +1,18 @@
+@{
+    ViewData["Title"] = "Nhập mã 2FA";
+}
+<section class="glass-card p-4">
+    <h2 class="section-title mb-2">Mã xác thực 2 lớp</h2>
+    <div class="section-bar mb-3"></div>
+    <form method="post">
+        <div class="mb-3">
+            <label class="form-label">Mã 6 số</label>
+            <input name="code" class="form-control" placeholder="123 456" />
+        </div>
+        <input type="hidden" name="rememberMe" value="@((bool)(ViewData["RememberMe"]??true))" />
+        <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+        <button class="neon-btn" type="submit">Đăng nhập</button>
+    </form>
+</section>
+
+

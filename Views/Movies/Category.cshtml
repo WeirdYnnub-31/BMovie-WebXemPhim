@@ -1,0 +1,16 @@
+@model List<webxemphim.Models.Movie>
+@{
+    ViewData["Title"] = ViewBag.Title ?? "Phim theo thể loại";
+}
+<section class="mb-5">
+    <h2 class="section-title mb-1">@ViewData["Title"]</h2>
+    <div class="section-bar mb-3"></div>
+    <div class="row g-3">
+        @foreach (var m in Model)
+        {
+            <div class="col-6 col-md-3 col-lg-2">
+                @await Html.PartialAsync("~/Views/Shared/_MovieCard.cshtml", m)
+            </div>
+        }
+    </div>
+</section>

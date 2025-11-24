@@ -1,0 +1,165 @@
+@model List<webxemphim.Models.Comment>
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Duyệt bình luận";
+}
+
+<section class="mb-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h2 class="section-title mb-1">Bình luận gần đây</h2>
+            <div class="section-bar"></div>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-success" onclick="bulkApprove()">
+                <i class="fas fa-check me-2"></i>Duyệt đã chọn
+            </button>
+            <button class="btn btn-outline-danger" onclick="bulkDelete()">
+                <i class="fas fa-trash me-2"></i>Xóa đã chọn
+            </button>
+        </div>
+    </div>
+    
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-info">@TempData["Message"]</div>
+    }
+    
+    <form id="bulkForm" method="post">
+        @Html.AntiForgeryToken()
+        <div class="glass-card p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>
+                                <input type="checkbox" id="selectAll" onchange="toggleAll()" />
+                            </th>
+                            <th>ID</th>
+                            <th>MovieId</th>
+                            <th>Nội dung</th>
+                            <th>Trạng thái</th>
+                            <th>Ngày tạo</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var c in Model)
+                    {
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="commentIds" value="@c.Id" class="comment-checkbox" />
+                            </td>
+                            <td>@c.Id</td>
+                            <td>@c.MovieId</td>
+                            <td class="text-break">@c.Content</td>
+                            <td>
+                                <span class="badge @(c.IsApproved ? "bg-success" : "bg-warning")">
+                                    @(c.IsApproved ? "Đã duyệt" : "Chờ duyệt")
+                                </span>
+                            </td>
+                            <td>@c.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="text-end">
+                                @if(!c.IsApproved){
+                                    <form method="post" asp-area="Admin" asp-controller="Comments" asp-action="Approve" asp-route-id="@c.Id" class="d-inline">
+                                        <button class="btn btn-sm btn-success">Duyệt</button>
+                                    </form>
+                                }
+                                <form method="post" asp-area="Admin" asp-controller="Comments" asp-action="Delete" asp-route-id="@c.Id" class="d-inline">
+                                    <button class="btn btn-sm btn-danger" onclick="return confirm('Xóa bình luận?');">Xóa</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+            </table>
+        </div>
+    </div>
+    </form>
+    @{
+        var currentPage = (int)(ViewBag.Page ?? 1);
+        var pageSize = (int)(ViewBag.PageSize ?? 30);
+        var total = (int)(ViewBag.Total ?? 0);
+        var totalPages = (int)Math.Ceiling(total / (double)pageSize);
+    }
+    @if (totalPages > 1)
+    {
+        <nav class="mt-3">
+            <ul class="pagination pagination-sm">
+                <li class="page-item @(currentPage<=1?"disabled":null)">
+                    <a class="page-link" asp-area="Admin" asp-controller="Comments" asp-action="Index" asp-route-page="@(currentPage-1)" asp-route-pageSize="@pageSize">Trước</a>
+                </li>
+                <li class="page-item disabled"><span class="page-link">Trang @currentPage/@totalPages</span></li>
+                <li class="page-item @(currentPage>=totalPages?"disabled":null)">
+                    <a class="page-link" asp-area="Admin" asp-controller="Comments" asp-action="Index" asp-route-page="@(currentPage+1)" asp-route-pageSize="@pageSize">Sau</a>
+                </li>
+            </ul>
+        </nav>
+    }
+</section>
+
+<script>
+function toggleAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.comment-checkbox');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+}
+
+function getSelectedIds() {
+    const checkboxes = document.querySelectorAll('.comment-checkbox:checked');
+    return Array.from(checkboxes).map(cb => parseInt(cb.value));
+}
+
+function bulkApprove() {
+    const selectedIds = getSelectedIds();
+    if (selectedIds.length === 0) {
+        alert('Vui lòng chọn ít nhất một bình luận để duyệt.');
+        return;
+    }
+    
+    if (confirm(`Bạn có chắc chắn muốn duyệt ${selectedIds.length} bình luận đã chọn?`)) {
+        const form = document.getElementById('bulkForm');
+        form.action = '@Url.Action("BulkApprove")';
+        
+        // Add selected IDs to form
+        selectedIds.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'commentIds';
+            input.value = id;
+            form.appendChild(input);
+        });
+        
+        form.submit();
+    }
+}
+
+function bulkDelete() {
+    const selectedIds = getSelectedIds();
+    if (selectedIds.length === 0) {
+        alert('Vui lòng chọn ít nhất một bình luận để xóa.');
+        return;
+    }
+    
+    if (confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.length} bình luận đã chọn? Hành động này không thể hoàn tác!`)) {
+        const form = document.getElementById('bulkForm');
+        form.action = '@Url.Action("BulkDelete")';
+        
+        // Add selected IDs to form
+        selectedIds.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'commentIds';
+            input.value = id;
+            form.appendChild(input);
+        });
+        
+        form.submit();
+    }
+}
+</script>
+
+

@@ -1,0 +1,49 @@
+@page "/contact"
+@model webxemphim.Pages.ContactModel
+@{
+    ViewData["Title"] = "Liên hệ";
+    ViewData["Description"] = "Liên hệ đội ngũ bmovie – góp ý, báo lỗi, đề xuất phim.";
+}
+@await Html.PartialAsync("~/Views/Shared/_SeoMeta.cshtml")
+
+<section class="glass-card p-4 p-md-5 mb-4">
+	<h1 class="section-title mb-2">Liên hệ</h1>
+	<div class="section-bar mb-3"></div>
+	<p class="text-white-50 mb-0">Gửi góp ý/báo lỗi/đề xuất phim cho chúng tôi. Phản hồi trong giờ làm việc.</p>
+</section>
+
+<section class="glass-card p-4 p-md-5 mb-4">
+	<div class="row g-4">
+		<div class="col-12 col-lg-6">
+			<h3 class="h5 mb-3">Gửi tin nhắn</h3>
+			<form>
+				<div class="mb-3">
+					<label class="form-label">Tên</label>
+					<input class="form-control" placeholder="Tên của bạn" />
+				</div>
+				<div class="mb-3">
+					<label class="form-label">Email</label>
+					<input type="email" class="form-control" placeholder="name@example.com" />
+				</div>
+				<div class="mb-3">
+					<label class="form-label">Nội dung</label>
+					<textarea rows="4" class="form-control" placeholder="Bạn muốn chia sẻ điều gì?"></textarea>
+				</div>
+				<button type="button" class="btn neon-btn">Gửi</button>
+			</form>
+		</div>
+		<div class="col-12 col-lg-6">
+			<h3 class="h5 mb-3">Thông tin</h3>
+			<ul class="text-white-50 mb-4">
+				<li>Email hỗ trợ: <a href="mailto:contact@bmovie.local">contact@bmovie.local</a></li>
+				<li>Email bản quyền: <a href="mailto:legal@bmovie.local">legal@bmovie.local</a></li>
+				<li>Facebook: <a href="#" rel="nofollow">facebook.com/bmovie</a></li>
+			</ul>
+			<div class="rounded-4 bg-glass p-4">
+				<div class="text-white-50">Địa chỉ (placeholder)</div>
+				<div class="ratio ratio-16x9 mt-2 rounded-4" style="background:#1d1b2e;"></div>
+			</div>
+		</div>
+	</div>
+</section>
+

@@ -1,0 +1,37 @@
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Tải ảnh lên";
+}
+
+<section class="mb-4">
+    <h2 class="section-title mb-1">Tải ảnh lên Blob</h2>
+    <div class="section-bar mb-3"></div>
+    <div class="glass-card p-4">
+        <form id="uploadForm">
+            <div class="mb-3">
+                <label class="form-label">Chọn ảnh (jpg, png, webp)</label>
+                <input class="form-control" type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" />
+            </div>
+            <button class="btn btn-primary" type="submit">Tải lên</button>
+        </form>
+        <div class="mt-3" id="result"></div>
+    </div>
+</section>
+
+<script>
+    const form = document.getElementById('uploadForm');
+    form.addEventListener('submit', async e => {
+        e.preventDefault();
+        const file = document.getElementById('fileInput').files[0];
+        if (!file) { alert('Chưa chọn file'); return; }
+        const fd = new FormData();
+        fd.append('file', file);
+        const res = await fetch('/api/Upload/image', { method: 'POST', body: fd, credentials: 'same-origin' });
+        const box = document.getElementById('result');
+        if (!res.ok) { box.innerHTML = '<div class="alert alert-danger">Tải lên thất bại</div>'; return; }
+        const data = await res.json();
+        box.innerHTML = `<div class="alert alert-success">URL: <a href="${data.url}" target="_blank">${data.url}</a></div><img src="${data.url}" class="img-fluid rounded mt-2" style="max-height:240px;" />`;
+    });
+</script>
+
+

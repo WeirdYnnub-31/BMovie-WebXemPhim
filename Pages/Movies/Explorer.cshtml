@@ -1,0 +1,60 @@
+@page "/movies/explorer"
+@model webxemphim.Pages.Movies.ExplorerModel
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Khám phá";
+    ViewData["Description"] = "Tìm kiếm và khám phá bộ sưu tập phim đa dạng";
+}
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<section class="mb-4" data-page="explorer">
+    <div class="container-fluid px-0">
+        <div class="movies-explorer-wrapper">
+            @(await Html.RenderComponentAsync<webxemphim.Components.Movies.MoviesExplorer>(
+                Microsoft.AspNetCore.Mvc.Rendering.RenderMode.Server))
+        </div>
+    </div>
+</section>
+
+<style>
+    .movies-explorer-wrapper {
+        width: 100%;
+        min-height: 100vh;
+        padding: 0;
+    }
+
+    .movies-explorer-wrapper ::deep .movies-explorer {
+        width: 100%;
+        max-width: 100%;
+        margin: 0 auto;
+    }
+
+    /* Đảm bảo pagination hiển thị đầy đủ */
+    .movies-explorer-wrapper ::deep .pagination {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        width: 100%;
+        max-width: 100%;
+        overflow: visible;
+    }
+
+    /* Đảm bảo content không bị cắt */
+    .movies-explorer-wrapper ::deep .movies-explorer__content {
+        width: 100%;
+        overflow: visible;
+    }
+
+    /* Đảm bảo grid hiển thị đúng */
+    .movies-explorer-wrapper ::deep .movies-grid {
+        width: 100%;
+        display: grid !important;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .movies-explorer-wrapper {
+            padding: 0.5rem;
+        }
+    }
+</style>

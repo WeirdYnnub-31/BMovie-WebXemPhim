@@ -1,0 +1,406 @@
+@using webxemphim.Models.DTOs
+@using System.Net.Http.Json
+@using System.Net.Http
+@using System.Linq
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<div class="movies-explorer">
+    <div class="movies-explorer__header">
+        <h1>🎬 Khám phá</h1>
+        <p class="lead">Tìm kiếm, lọc và duyệt phim từ cơ sở dữ liệu thực tế.</p>
+    </div>
+
+    @* Debug: Always show to confirm component is rendering *@
+    <div style="display: none;" id="blazor-component-loaded">Component loaded</div>
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            <strong>Lỗi:</strong> @_errorMessage
+            <br />
+            <small>Vui lòng kiểm tra kết nối mạng hoặc thử lại sau.</small>
+        </div>
+    }
+
+    <div class="movies-explorer__filters">
+        <div class="filter-group">
+            <label for="search">Tìm kiếm</label>
+            <input id="search" @bind="_filters.Search" @bind:event="oninput" placeholder="Nhập tên phim..." autocomplete="off" />
+        </div>
+        <div class="filter-group">
+            <label for="genre">Thể loại</label>
+            <select id="genre" @bind="_filters.Genre">
+                <option value="">Tất cả</option>
+                @foreach (var genre in _genres)
+                {
+                    <option value="@genre.Slug">@genre.Name</option>
+                }
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="sort">Sắp xếp</label>
+            <select id="sort" @bind="_filters.SortBy">
+                <option value="viewcount">Xem nhiều nhất</option>
+                <option value="rating">Đánh giá cao nhất</option>
+                <option value="date">Mới nhất</option>
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button class="btn neon-btn" @onclick="ApplyFilters">Áp dụng</button>
+            <button class="btn btn-outline-light" @onclick="ResetFilters">Đặt lại</button>
+        </div>
+    </div>
+
+    @if (_movies?.Data?.Any() == true)
+    {
+        <div class="movies-explorer__stats">
+            <div class="stat-card">
+                <span class="stat-card__label">Tổng kết quả</span>
+                <span class="stat-card__value">@TotalResults.ToString("N0")</span>
+                <small>Trang @_movies!.Page / @_movies.TotalPages</small>
+            </div>
+            <div class="stat-card">
+                <span class="stat-card__label">IMDb cao nhất</span>
+                <span class="stat-card__value">@(_topRatedMovie?.Imdb?.ToString("0.0") ?? "-")</span>
+                <small>@(_topRatedMovie?.Title ?? "Chưa có")</small>
+            </div>
+            <div class="stat-card">
+                <span class="stat-card__label">Lượt xem nhiều nhất</span>
+                <span class="stat-card__value">@FormatViewCount(_mostViewedMovie?.ViewCount ?? 0)</span>
+                <small>@(_mostViewedMovie?.Title ?? "Chưa có")</small>
+            </div>
+            <div class="stat-card">
+                <span class="stat-card__label">Top thể loại</span>
+                <div class="stat-card__tags">
+                    @foreach (var (genre, count) in _genreBreakdown)
+                    {
+                        <span class="stat-tag">@genre <small>(@count)</small></span>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @_errorMessage
+        </div>
+    }
+
+    <div class="movies-explorer__content">
+        @if (_isLoading)
+        {
+            <div class="loading-state">
+                <div class="spinner-border text-light" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p>Đang tải dữ liệu phim...</p>
+            </div>
+        }
+        else if (_movies?.Data?.Any() == true)
+        {
+            <div class="movies-grid">
+                @foreach (var movie in _movies.Data)
+                {
+                    <div class="movie-card" @onclick="() => NavigateToMovie(movie.Slug)">
+                        <div class="movie-card__poster">
+                            <img src="@GetPosterUrl(movie.PosterUrl)" alt="@movie.Title" loading="lazy" />
+                            @if (movie.Imdb.HasValue)
+                            {
+                                <span class="movie-card__badge">⭐ @movie.Imdb.Value.ToString("0.0")</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(movie.AgeRating))
+                            {
+                                <span class="movie-card__age">@movie.AgeRating</span>
+                            }
+                        </div>
+                        <div class="movie-card__info">
+                            <h3>@movie.Title</h3>
+                            <div class="movie-card__meta">
+                                @if (movie.Year.HasValue)
+                                {
+                                    <span><i class="bi bi-calendar-event"></i> @movie.Year</span>
+                                }
+                                <span><i class="bi bi-eye"></i> @FormatViewCount(movie.ViewCount)</span>
+                                @if (movie.AverageRating.HasValue)
+                                {
+                                    <span><i class="bi bi-star-fill"></i> @movie.AverageRating.Value.ToString("0.0")</span>
+                                }
+                            </div>
+                            @if (movie.Genres.Any())
+                            {
+                                <p class="movie-card__genres">@string.Join(", ", movie.Genres.Take(3))</p>
+                            }
+                            <div class="movie-card__actions">
+                                <button class="btn btn-sm neon-btn" type="button" @onclick:stopPropagation="true" @onclick="() => NavigateToWatch(movie.Slug)">Xem ngay</button>
+                                <button class="btn btn-sm btn-outline-light" type="button" @onclick:stopPropagation="true" @onclick="() => NavigateToDetail(movie.Slug)">Chi tiết</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <h3>Không tìm thấy phim phù hợp</h3>
+                <p>Thử thay đổi điều kiện lọc hoặc tìm kiếm từ khoá khác.</p>
+            </div>
+        }
+    </div>
+
+    @if (_movies != null && _movies.TotalPages > 1)
+    {
+        <div class="pagination">
+            <button class="btn btn-outline-light"
+                    disabled="@(!_movies.HasPrevious)"
+                    @onclick="() => ChangePage(_filters.Page - 1)">
+                ◀ Trước
+            </button>
+            <span>Trang @_movies.Page / @_movies.TotalPages</span>
+            <button class="btn btn-outline-light"
+                    disabled="@(!_movies.HasNext)"
+                    @onclick="() => ChangePage(_filters.Page + 1)">
+                Sau ▶
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    private readonly MoviesFilterState _filters = new();
+    private List<GenreDto> _genres = new();
+    private PagedResultDto<MovieListItemDto>? _movies;
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    private MovieListItemDto? _topRatedMovie;
+    private MovieListItemDto? _mostViewedMovie;
+    private IReadOnlyList<(string Genre, int Count)> _genreBreakdown = Array.Empty<(string, int)>();
+
+    private int TotalResults => _movies?.TotalCount ?? 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadGenresAsync();
+        await LoadMoviesAsync();
+    }
+
+    private async Task LoadGenresAsync()
+    {
+        try
+        {
+            var client = CreateClient();
+            var response = await client.GetFromJsonAsync<List<GenreDto>>("/api/v2/genres");
+            _genres = response ?? new List<GenreDto>();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Không tải được danh sách thể loại: {ex.Message}";
+        }
+    }
+
+    private async Task LoadMoviesAsync()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var client = CreateClient();
+            var query = BuildQueryString();
+            var endpoint = $"/api/v2/movies?{query}";
+            
+            var httpResponse = await client.GetAsync(endpoint);
+            
+            if (httpResponse.IsSuccessStatusCode)
+            {
+                var response = await httpResponse.Content.ReadFromJsonAsync<PagedResultDto<MovieListItemDto>>();
+                
+                if (response is not null)
+                {
+                    _movies = response;
+                    _filters.Page = response.Page;
+                    ComputeDerivedStats();
+                }
+                else
+                {
+                    _movies = new PagedResultDto<MovieListItemDto>();
+                    ComputeDerivedStats();
+                }
+            }
+            else
+            {
+                var errorContent = await httpResponse.Content.ReadAsStringAsync();
+                _errorMessage = $"Lỗi HTTP {(int)httpResponse.StatusCode}: {httpResponse.ReasonPhrase}. {errorContent}";
+                _movies = new PagedResultDto<MovieListItemDto>();
+                ComputeDerivedStats();
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            _errorMessage = $"Không thể kết nối đến server: {ex.Message}";
+            _movies = new PagedResultDto<MovieListItemDto>();
+            ComputeDerivedStats();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Lỗi không xác định: {ex.Message}. Chi tiết: {ex.GetType().Name}";
+            _movies = new PagedResultDto<MovieListItemDto>();
+            ComputeDerivedStats();
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ComputeDerivedStats()
+    {
+        var source = _movies?.Data ?? new List<MovieListItemDto>();
+        _topRatedMovie = source
+            .Where(m => m.Imdb.HasValue)
+            .OrderByDescending(m => m.Imdb)
+            .FirstOrDefault();
+
+        _mostViewedMovie = source
+            .OrderByDescending(m => m.ViewCount)
+            .FirstOrDefault();
+
+        _genreBreakdown = source
+            .SelectMany(m => m.Genres)
+            .Where(g => !string.IsNullOrWhiteSpace(g))
+            .GroupBy(g => g)
+            .OrderByDescending(g => g.Count())
+            .Take(4)
+            .Select(g => (g.Key, g.Count()))
+            .ToList();
+    }
+
+    private HttpClient CreateClient()
+    {
+        var client = HttpClientFactory.CreateClient();
+        client.BaseAddress = new Uri(Navigation.BaseUri);
+        client.Timeout = TimeSpan.FromSeconds(30);
+        return client;
+    }
+
+    private string BuildQueryString()
+    {
+        var parameters = new List<string>
+        {
+            $"page={_filters.Page}",
+            $"pageSize={_filters.PageSize}",
+            $"sortBy={_filters.SortBy}"
+        };
+
+        if (!string.IsNullOrWhiteSpace(_filters.Search))
+        {
+            parameters.Add($"search={Uri.EscapeDataString(_filters.Search)}");
+        }
+        if (!string.IsNullOrWhiteSpace(_filters.Genre))
+        {
+            parameters.Add($"genre={Uri.EscapeDataString(_filters.Genre)}");
+        }
+
+        return string.Join("&", parameters);
+    }
+
+    private async Task ApplyFilters()
+    {
+        _filters.Page = 1;
+        await LoadMoviesAsync();
+    }
+
+    private async Task ResetFilters()
+    {
+        _filters.Reset();
+        await LoadMoviesAsync();
+    }
+
+    private async Task ChangePage(int page)
+    {
+        if (_movies == null || page < 1 || page > _movies.TotalPages)
+        {
+            return;
+        }
+
+        _filters.Page = page;
+        await LoadMoviesAsync();
+        await ScrollToTopAsync();
+    }
+
+    private Task ScrollToTopAsync() => JS.InvokeVoidAsync("window.scrollTo", new { top = 0, behavior = "smooth" }).AsTask();
+
+    private void NavigateToMovie(string? slug)
+    {
+        if (!string.IsNullOrWhiteSpace(slug))
+        {
+            Navigation.NavigateTo($"/movie/{slug}");
+        }
+    }
+
+    private void NavigateToWatch(string? slug)
+    {
+        if (!string.IsNullOrWhiteSpace(slug))
+        {
+            Navigation.NavigateTo($"/watch/{slug}");
+        }
+    }
+
+    private void NavigateToDetail(string? slug)
+    {
+        if (!string.IsNullOrWhiteSpace(slug))
+        {
+            Navigation.NavigateTo($"/movie/{slug}");
+        }
+    }
+
+    private static string GetPosterUrl(string? posterUrl)
+    {
+        if (string.IsNullOrWhiteSpace(posterUrl))
+        {
+            return "/favicon.ico";
+        }
+
+        if (posterUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            return $"/img/resize?url={Uri.EscapeDataString(posterUrl)}&w=300&q=80";
+        }
+
+        return posterUrl;
+    }
+
+    private static string FormatViewCount(long viewCount)
+    {
+        return viewCount switch
+        {
+            >= 1_000_000 => $"{viewCount / 1_000_000.0:F1}M lượt xem",
+            >= 1_000 => $"{viewCount / 1_000.0:F1}K lượt xem",
+            _ => $"{viewCount} lượt xem"
+        };
+    }
+
+    private sealed class MoviesFilterState
+    {
+        public string? Search { get; set; }
+        public string? Genre { get; set; }
+        public string SortBy { get; set; } = "viewcount";
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 24;
+
+        public void Reset()
+        {
+            Search = string.Empty;
+            Genre = string.Empty;
+            SortBy = "viewcount";
+            Page = 1;
+            PageSize = 24;
+        }
+    }
+}

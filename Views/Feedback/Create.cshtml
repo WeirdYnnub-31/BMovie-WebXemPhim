@@ -1,0 +1,86 @@
+@model webxemphim.Models.Feedback
+@{
+    ViewData["Title"] = "Gửi phản hồi";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card bg-glass border-0 rounded-4">
+                <div class="card-header bg-transparent border-0 pb-0">
+                    <h2 class="card-title mb-0">Gửi phản hồi</h2>
+                    <p class="text-muted small mt-2">Chúng tôi rất quan tâm đến ý kiến của bạn. Vui lòng điền thông tin bên dưới.</p>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.MovieTitle != null)
+                    {
+                        <div class="alert alert-info bg-glass border-0 rounded-4 mb-4">
+                            <strong>Phim:</strong> @ViewBag.MovieTitle
+                        </div>
+                    }
+
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success bg-glass border-0 rounded-4">
+                            @TempData["SuccessMessage"]
+                        </div>
+                    }
+
+                    <form asp-action="Create" method="post">
+                        <input type="hidden" asp-for="MovieId" value="@ViewBag.MovieId" />
+                        <input type="hidden" asp-for="Status" value="Pending" />
+
+                        <div class="mb-3">
+                            <label asp-for="Type" class="form-label">Loại phản hồi <span class="text-danger">*</span></label>
+                            <select asp-for="Type" class="form-select bg-glass border-0" required>
+                                <option value="">-- Chọn loại phản hồi --</option>
+                                <option value="@FeedbackType.MovieError">Phim không phát được</option>
+                                <option value="@FeedbackType.VideoQuality">Chất lượng video kém</option>
+                                <option value="@FeedbackType.SubtitleError">Lỗi phụ đề</option>
+                                <option value="@FeedbackType.AudioError">Lỗi âm thanh</option>
+                                <option value="@FeedbackType.BugReport">Báo lỗi website</option>
+                                <option value="@FeedbackType.FeatureRequest">Yêu cầu tính năng mới</option>
+                                <option value="@FeedbackType.Suggestion">Góp ý cải tiến</option>
+                                <option value="@FeedbackType.Other">Khác</option>
+                            </select>
+                            <span asp-validation-for="Type" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Title" class="form-label">Tiêu đề <span class="text-danger">*</span></label>
+                            <input asp-for="Title" class="form-control bg-glass border-0" placeholder="Nhập tiêu đề phản hồi" required maxlength="256" />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label">Mô tả chi tiết <span class="text-danger">*</span></label>
+                            <textarea asp-for="Description" class="form-control bg-glass border-0" rows="6" placeholder="Mô tả chi tiết vấn đề hoặc ý kiến của bạn..." required maxlength="2000"></textarea>
+                            <small class="text-muted">Tối đa 2000 ký tự</small>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+
+                        @if (ViewBag.MovieId != null)
+                        {
+                            <div class="mb-3">
+                                <label asp-for="MovieSourceUrl" class="form-label">URL nguồn video (nếu có)</label>
+                                <input asp-for="MovieSourceUrl" class="form-control bg-glass border-0" placeholder="URL video có vấn đề" maxlength="1024" />
+                                <small class="text-muted">Giúp chúng tôi xác định nguồn video cụ thể có vấn đề</small>
+                                <span asp-validation-for="MovieSourceUrl" class="text-danger"></span>
+                            </div>
+                        }
+
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="@(ViewBag.MovieId != null ? Url.Action("Watch", "Movies", new { id = ViewBag.MovieId }) : Url.Action("Index", "Home"))" class="btn btn-outline-secondary">Hủy</a>
+                            <button type="submit" class="btn btn-primary">Gửi phản hồi</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+

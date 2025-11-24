@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+option csharp_namespace = "webxemphim.Grpc";
+
+package movies;
+
+service Movies {
+  rpc List (ListRequest) returns (ListResponse);
+  rpc GetBySlug (GetBySlugRequest) returns (MovieItem);
+}
+
+message ListRequest {
+  int32 page = 1;
+  int32 pageSize = 2;
+  string genre = 3;
+  string search = 4;
+  string sortBy = 5; // viewcount, rating, date
+}
+
+message ListResponse {
+  repeated MovieItem data = 1;
+  int32 page = 2;
+  int32 pageSize = 3;
+  int32 totalCount = 4;
+}
+
+message GetBySlugRequest { string slug = 1; }
+
+message MovieItem {
+  int32 id = 1;
+  string title = 2;
+  string slug = 3;
+  string posterUrl = 4;
+  double imdb = 5;
+  int32 year = 6;
+  string ageRating = 7;
+  bool isSeries = 8;
+  double averageRating = 9;
+}
+
+

@@ -1,0 +1,76 @@
+@model webxemphim.Models.Movie
+@inject webxemphim.Services.CdnService Cdn
+@functions {
+    string GetContentTypeIcon(ContentType type)
+    {
+        return type switch
+        {
+            ContentType.TVShow => "📺",
+            ContentType.Anime => "🎌",
+            ContentType.Trailer => "🎥",
+            ContentType.BehindTheScenes => "🎬",
+            ContentType.Documentary => "📚",
+            ContentType.ShortFilm => "🎞️",
+            _ => ""
+        };
+    }
+    
+    string GetContentTypeName(ContentType type)
+    {
+        return type switch
+        {
+            ContentType.TVShow => "TV Series",
+            ContentType.Anime => "Anime",
+            ContentType.Trailer => "Trailer",
+            ContentType.BehindTheScenes => "Behind the Scenes",
+            ContentType.Documentary => "Phim tài liệu",
+            ContentType.ShortFilm => "Phim ngắn",
+            _ => "Phim"
+        };
+    }
+}
+<div class="movie-card glass-card rounded-4 shadow-neon hover-glow d-flex flex-column align-items-stretch h-100 p-0 position-relative">
+    <div class="rounded-4 overflow-hidden position-relative" style="aspect-ratio:2/3; background:#222;">
+        <img src="@Cdn.Resolve($"/img/resize?url={System.Net.WebUtility.UrlEncode(Model.PosterUrl)}&w=300&q=70")" alt="@(Model.Title ?? "Poster")" style="object-fit:cover;width:100%;height:100%;min-height:260px;display:block;" />
+        <div class="overlay rounded-4 d-flex flex-column justify-content-center align-items-center gap-2 p-2 position-absolute top-0 start-0 w-100 h-100 opacity-0 hover-opacity-100 bg-glass bg-opacity-80" style="transition:.25s;">
+            <a class="btn btn-neon-2026 btn-lg rounded-pill shadow fw-bold mb-2 px-4" asp-controller="Movies" asp-action="Watch" asp-route-slug="@Model.Slug">Xem phim</a>
+            <a class="btn btn-outline-light btn-lg rounded-pill border border-accent px-4 fw-bold" asp-controller="Movies" asp-action="Detail" asp-route-slug="@Model.Slug">Chi tiết</a>
+        </div>
+    </div>
+    <div class="pt-2 px-2 pb-1 flex-grow-1 d-flex flex-column align-items-stretch justify-content-between">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                @if (Model.ContentType != ContentType.Movie)
+                {
+                    <span class="badge badge-neon rounded-pill fw-bold flex-shrink-0" title="@GetContentTypeName(Model.ContentType)">
+                        @GetContentTypeIcon(Model.ContentType)
+                    </span>
+                }
+                @if (Model.Imdb.HasValue) { <span class="badge badge-imdb badge-glass rounded-pill shadow fw-bold flex-shrink-0">IMDb @Model.Imdb.Value.ToString("0.0")</span> }
+                @if (!string.IsNullOrWhiteSpace(Model.AgeRating)) { <span class="badge badge-neon rounded-pill fw-bold flex-shrink-0">@Model.AgeRating</span> }
+                @if (Model.DurationMinutes.HasValue) { <span class="badge badge-light bg-glass rounded-pill flex-shrink-0">@Model.DurationMinutes<span>'</span></span> }
+            </div>
+            <h6 class="mt-1 mb-1 fw-semibold text-glow text-truncate-2" style="line-height:1.2;min-height:2.7em;">@Model.Title</h6>
+            <div class="movie-meta small text-white-50 mb-1">
+                @if (Model.MovieGenres?.Any() == true)
+                {
+                    @string.Join(" • ", Model.MovieGenres.Select(g => g.Genre.Name))
+                }
+                @if (Model.Year.HasValue)
+                {
+                    <text> (@Model.Year)</text>
+                }
+            </div>
+        </div>
+        @if (Model.AverageRating.HasValue && Model.AverageRating > 0)
+        {
+            <div class="d-flex align-items-center gap-1 mb-1">
+                <span class="text-warning">★</span>
+                <span class="text-white-50 small">@Model.AverageRating.Value.ToString("F1")</span>
+                <span class="text-white-50 small">(@Model.TotalRatings)</span>
+            </div>
+        }
+    </div>
+</div>
+
+

@@ -1,0 +1,786 @@
+﻿@{
+    ViewData["Title"] = "Trang chủ";
+    var featured = ViewBag.Featured as List<webxemphim.Models.Movie> ?? new();
+    var heroFeatured = featured.Take(6).ToList();
+    while(heroFeatured.Count < 6) { heroFeatured.Add(null); }
+    var firstMovie = heroFeatured.FirstOrDefault(m=>m!=null);
+    var recent = ViewBag.Recent as List<webxemphim.Models.Movie> ?? new();
+    var trending = ViewBag.Trending as List<webxemphim.Models.Movie> ?? new();
+    var newReleases = ViewBag.NewReleases as List<webxemphim.Models.Movie> ?? new();
+    var recommendations = ViewBag.Recommendations as List<webxemphim.Models.Movie> ?? new();
+    ViewData["Description"] = "bmovie - Xem phim mới, phim hot, chủ đề nổi bật với giao diện dark tím hiện đại.";
+    int countThumbs = 6;
+
+    var heroSideMovies = new List<webxemphim.Models.Movie>();
+    var heroUsedIds = new HashSet<int>();
+    if (firstMovie != null)
+    {
+        heroUsedIds.Add(firstMovie.Id);
+    }
+
+    IEnumerable<IEnumerable<webxemphim.Models.Movie?>> heroCandidatePools = new[]
+    {
+        heroFeatured.Skip(1),
+        trending,
+        recent,
+        newReleases,
+        recommendations
+    };
+
+    foreach (var pool in heroCandidatePools)
+    {
+        foreach (var movie in pool)
+        {
+            if (movie == null) continue;
+            if (heroUsedIds.Contains(movie.Id)) continue;
+            heroSideMovies.Add(movie);
+            heroUsedIds.Add(movie.Id);
+            if (heroSideMovies.Count >= 4) break;
+        }
+        if (heroSideMovies.Count >= 4) break;
+    }
+
+    if (!heroSideMovies.Any() && firstMovie != null)
+    {
+        heroSideMovies.Add(firstMovie);
+    }
+}
+
+<link rel="stylesheet" href="~/css/home-modern.css" asp-append-version="true" />
+
+<style>
+    /* CRITICAL: Ensure all movie sections and items are visible by default */
+    .movie-section,
+    .movie-section-modern,
+    .recommendations-special {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+        visibility: visible !important;
+        display: block !important;
+    }
+    
+    /* CRITICAL: Ensure hero buttons are always visible */
+    .hero-buttons .btn,
+    .hero-btn-primary,
+    .hero-btn-secondary,
+    .hero-actions-row .hero-buttons .btn {
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: inline-flex !important;
+    }
+    
+    /* Override any GSAP inline styles that might hide buttons */
+    .hero-buttons .btn[style*="opacity: 0"],
+    .hero-btn-primary[style*="opacity: 0"],
+    .hero-btn-secondary[style*="opacity: 0"] {
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+    
+    .movie-scroll-item,
+    .recommendation-card,
+    .movie-card {
+        opacity: 1 !important;
+        transform: translateX(0) scale(1) !important;
+        visibility: visible !important;
+        display: block !important;
+    }
+    
+    /* CRITICAL: Ensure movie-card-modern is always visible */
+    .movie-card-modern,
+    [class*="movie-card"] {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+        visibility: visible !important;
+        display: block !important;
+    }
+    
+    /* Prevent GSAP from hiding movie cards */
+    .movie-card-modern[style*="opacity: 0"],
+    [class*="movie-card"][style*="opacity: 0"] {
+        opacity: 1 !important;
+    }
+    
+    .movie-card-modern[style*="transform: translate(0px, 30px)"],
+    .movie-card-modern[style*="transform: translate(0px, 50px)"] {
+        transform: translateY(0) !important;
+    }
+    
+    .movie-section-header,
+    .movie-section-title,
+    .recommendations-header,
+    .recommendations-title {
+        opacity: 1 !important;
+        transform: translateX(0) translateY(0) !important;
+        visibility: visible !important;
+    }
+</style>
+
+<script>
+    // CRITICAL: Ensure visibility immediately, before any GSAP or other scripts run
+    (function() {
+        'use strict';
+        // Run immediately when script loads
+        function ensureVisibility() {
+            const sections = document.querySelectorAll('.movie-section, .movie-section-modern, .recommendations-special');
+            sections.forEach(section => {
+                section.style.opacity = '1';
+                section.style.transform = 'translateY(0)';
+                section.style.visibility = 'visible';
+                section.style.display = '';
+                
+                const items = section.querySelectorAll('.movie-scroll-item, .recommendation-card, .movie-card, .movie-card-modern, [class*="movie-card"]');
+                items.forEach(item => {
+                    item.style.setProperty('opacity', '1', 'important');
+                    item.style.setProperty('transform', 'translateX(0) scale(1) translateY(0)', 'important');
+                    item.style.setProperty('visibility', 'visible', 'important');
+                    item.style.setProperty('display', 'block', 'important');
+                });
+                
+                // Also ensure movie-card-modern inside items are visible
+                const movieCards = section.querySelectorAll('.movie-card-modern, [class*="movie-card"]');
+                movieCards.forEach(card => {
+                    card.style.setProperty('opacity', '1', 'important');
+                    card.style.setProperty('transform', 'translateY(0)', 'important');
+                    card.style.setProperty('visibility', 'visible', 'important');
+                    card.style.setProperty('display', 'block', 'important');
+                });
+                
+                const headers = section.querySelectorAll('.movie-section-header, .movie-section-title, .recommendations-header, .recommendations-title');
+                headers.forEach(header => {
+                    header.style.opacity = '1';
+                    header.style.transform = 'translateX(0) translateY(0)';
+                    header.style.visibility = 'visible';
+                });
+            });
+        }
+        
+        // Run immediately
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', ensureVisibility);
+        } else {
+            ensureVisibility();
+        }
+        
+        // Also run after a short delay to catch any late-loading content
+        setTimeout(ensureVisibility, 10);
+        setTimeout(ensureVisibility, 50);
+        setTimeout(ensureVisibility, 100);
+        setTimeout(ensureVisibility, 200);
+        setTimeout(ensureVisibility, 500);
+        
+        // CRITICAL: Ensure hero buttons are always visible
+        function ensureHeroButtonsVisible() {
+            const heroButtons = document.querySelectorAll('.hero-buttons .btn, .hero-btn-primary, .hero-btn-secondary, .hero-actions-row .hero-buttons .btn');
+            heroButtons.forEach(btn => {
+                btn.style.setProperty('opacity', '1', 'important');
+                btn.style.setProperty('visibility', 'visible', 'important');
+                btn.style.setProperty('display', 'inline-flex', 'important');
+            });
+        }
+        
+        // Run immediately and repeatedly
+        ensureHeroButtonsVisible();
+        setTimeout(ensureHeroButtonsVisible, 100);
+        setTimeout(ensureHeroButtonsVisible, 300);
+        setTimeout(ensureHeroButtonsVisible, 500);
+        setTimeout(ensureHeroButtonsVisible, 1000);
+        setTimeout(ensureHeroButtonsVisible, 2000);
+        
+        // Watch for GSAP animations that might hide cards
+        if (typeof MutationObserver !== 'undefined') {
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                        const target = mutation.target;
+                            if (target.classList && (target.classList.contains('movie-card-modern') || target.classList.contains('movie-card') || target.className.includes('movie-card'))) {
+                                // Force visibility if GSAP tries to hide it
+                                const style = window.getComputedStyle(target);
+                                if (style.opacity === '0' || target.style.transform.includes('30px') || target.style.transform.includes('50px')) {
+                                    target.style.setProperty('opacity', '1', 'important');
+                                    target.style.setProperty('transform', 'translateY(0)', 'important');
+                                    target.style.setProperty('visibility', 'visible', 'important');
+                                }
+                            }
+                            
+                            // CRITICAL: Watch for hero buttons being hidden
+                            if (target.classList && (target.classList.contains('hero-btn-primary') || target.classList.contains('hero-btn-secondary') || target.classList.contains('btn') && target.closest('.hero-buttons'))) {
+                                const style = window.getComputedStyle(target);
+                                if (style.opacity === '0' || target.style.opacity === '0') {
+                                    target.style.setProperty('opacity', '1', 'important');
+                                    target.style.setProperty('visibility', 'visible', 'important');
+                                    target.style.setProperty('display', 'inline-flex', 'important');
+                                }
+                            }
+                    }
+                });
+            });
+            
+            if (document.body) {
+                observer.observe(document.body, {
+                    attributes: true,
+                    attributeFilter: ['style'],
+                    subtree: true
+                });
+            } else {
+                document.addEventListener('DOMContentLoaded', function() {
+                    observer.observe(document.body, {
+                        attributes: true,
+                        attributeFilter: ['style'],
+                        subtree: true
+                    });
+                });
+            }
+        }
+    })();
+</script>
+
+@if (firstMovie != null)
+{
+    var heroGenresList = firstMovie.MovieGenres?
+        .Select(g => g.Genre?.Name)
+        .Where(name => !string.IsNullOrWhiteSpace(name))
+        .Distinct()
+        .Take(6)
+        .ToList() ?? new List<string>();
+    if (!heroGenresList.Any())
+    {
+        heroGenresList = new List<string> { "Hành động", "Phiêu lưu", "Giật gân" };
+    }
+    var heroNavItems = heroGenresList
+        .Concat(new[] { "Chiến thuật", "Arcade", "Drama" })
+        .Distinct()
+        .Take(6)
+        .ToList();
+    var heroScenes = heroSideMovies;
+    var heroPlatforms = new List<string>
+    {
+        firstMovie.IsSeries ? "Series" : "Movie"
+    };
+    if (!string.IsNullOrWhiteSpace(firstMovie.Country))
+    {
+        heroPlatforms.Add(firstMovie.Country!);
+    }
+    if (firstMovie.DurationMinutes.HasValue)
+    {
+        heroPlatforms.Add($"{firstMovie.DurationMinutes.Value} phút");
+    }
+    var heroRating = firstMovie.Imdb ?? 7.5;
+    var heroPrice = firstMovie.CoinCost > 0 ? $"{firstMovie.CoinCost} coins" : "Miễn phí";
+
+    <section class="hero-section hero-showcase" id="hero-section">
+        <img class="hero-bg" src="@(firstMovie.PosterUrl ?? "/favicon.ico")" alt="@firstMovie.Title" loading="eager" />
+        <div class="hero-showcase-overlay"></div>
+        <div class="hero-game-grid">
+            <div class="hero-main-panel">
+                <div class="hero-top-bar">
+                    <div class="hero-category-nav">
+                        <span class="hero-category-label">bmovie</span>
+                        @for (int i = 0; i < heroNavItems.Count; i++)
+                        {
+                            var navItem = heroNavItems[i];
+                            <a class="hero-category-pill @(i == 0 ? "active" : null)" href="/movies?genre=@Uri.EscapeDataString(navItem)">
+                                @navItem
+                            </a>
+                        }
+                    </div>
+                    <div class="hero-quick-icons">
+                        <button type="button" aria-label="Tìm kiếm"><i class="fas fa-search"></i></button>
+                        <button type="button" aria-label="Yêu thích"><i class="far fa-heart"></i></button>
+                        <button type="button" aria-label="Giỏ hàng"><i class="fas fa-shopping-cart"></i></button>
+                    </div>
+                </div>
+                <div class="hero-main-body">
+                    <span class="hero-price-tag">@heroPrice</span>
+                    <h1 class="hero-title">@firstMovie.Title</h1>
+                    <div class="hero-rating-row">
+                        <div class="hero-stars">
+                            @{
+                                var starScore = Math.Clamp((int)Math.Round(heroRating / 2, MidpointRounding.AwayFromZero), 0, 5);
+                                for (int s = 1; s <= 5; s++)
+                                {
+                                    <i class="fas fa-star @(s <= starScore ? "text-warning" : "text-muted")"></i>
+                                }
+                            }
+                        </div>
+                        <span class="hero-rating-value">@heroRating.ToString("0.0") IMDb</span>
+                        <div class="hero-platforms">
+                            @foreach (var platform in heroPlatforms)
+                            {
+                                <span class="hero-platform-chip">@platform</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="hero-genre-tags">
+                        @foreach (var tag in heroGenresList.Take(4))
+                        {
+                            <span class="hero-tag">@tag</span>
+                        }
+                    </div>
+                    <p class="hero-description">
+                        @if (!string.IsNullOrWhiteSpace(firstMovie.Description))
+                        {
+                            @(firstMovie.Description.Length > 220 ? firstMovie.Description.Substring(0, 220) + "..." : firstMovie.Description)
+                        }
+                        else
+                        {
+                            <text>Khám phá bộ phim đặc sắc với cốt truyện hấp dẫn và diễn xuất xuất sắc.</text>
+                        }
+                    </p>
+                    <div class="hero-actions-row">
+                        <div class="hero-icon-buttons">
+                            <button type="button" aria-label="Yêu thích"><i class="far fa-heart"></i></button>
+                            <button type="button" aria-label="Thông báo"><i class="far fa-bell"></i></button>
+                            <button type="button" aria-label="Thêm vào giỏ"><i class="fas fa-shopping-bag"></i></button>
+                        </div>
+                        <div class="hero-buttons">
+                            <a href="@Url.Action("Watch", "Movies", new { slug = firstMovie.Slug })" class="btn hero-btn-primary">
+                                <i class="fas fa-play"></i> Xem ngay
+                            </a>
+                            <a href="@Url.Action("Detail", "Movies", new { slug = firstMovie.Slug })" class="btn hero-btn-secondary">
+                                <i class="fas fa-info-circle"></i> Chi tiết
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-scene-panel">
+                <div class="hero-scene-header">
+                    <span>Scenes</span>
+                    <a href="@Url.Action("Detail", "Movies", new { slug = firstMovie.Slug })" class="hero-watch-trailer">
+                        <i class="fas fa-play-circle"></i> Watch trailer
+                    </a>
+                </div>
+                <div class="hero-scene-list">
+                    @foreach (var scene in heroScenes)
+                    {
+                        var sceneMovie = scene ?? firstMovie;
+                        var sceneGenres = sceneMovie?.MovieGenres?
+                            .Select(g => g.Genre?.Name)
+                            .Where(name => !string.IsNullOrWhiteSpace(name))
+                            .Distinct()
+                            .Take(2)
+                            .ToList() ?? new List<string>();
+                        var sceneRating = sceneMovie?.Imdb?.ToString("0.0") ?? "7.0";
+                        var sceneDuration = sceneMovie?.DurationMinutes.HasValue == true
+                            ? $"{sceneMovie.DurationMinutes.Value} phút"
+                            : null;
+                        <a href="@Url.Action("Detail", "Movies", new { slug = sceneMovie?.Slug ?? firstMovie.Slug })" class="hero-scene-card">
+                            <img src="@(sceneMovie?.PosterUrl ?? firstMovie.PosterUrl ?? "/favicon.ico")" alt="@sceneMovie?.Title" loading="lazy" />
+                            <div class="hero-scene-info">
+                                <p class="hero-scene-title">@sceneMovie?.Title</p>
+                                <div class="hero-scene-meta-line">
+                                    <span><i class="fas fa-star text-warning"></i>@sceneRating</span>
+                                    @if (sceneMovie?.Year.HasValue == true)
+                                    {
+                                        <span>@sceneMovie.Year</span>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(sceneDuration))
+                                    {
+                                        <span>@sceneDuration</span>
+                                    }
+                                </div>
+                                <div class="hero-scene-tags">
+                                    @foreach (var tag in sceneGenres)
+                                    {
+                                        <span>@tag</span>
+                                    }
+                                </div>
+                            </div>
+                            <div class="hero-scene-cta">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+@if (featured.Any())
+{
+    <section class="movie-section" data-section="featured">
+        <div class="movie-section-header">
+            <div>
+                <h2 class="movie-section-title">🎬 Phim nổi bật</h2>
+                <p class="movie-section-subtitle">Những bộ phim được yêu thích nhất</p>
+            </div>
+            <a href="/movies" class="movie-section-see-all">
+                Xem tất cả <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        <div class="movie-scroll-container">
+            <div class="movie-scroll-wrapper">
+                @foreach (var m in featured)
+                {
+                    <div class="movie-scroll-item">
+                        @await Html.PartialAsync("~/Views/Shared/_MovieCardModern.cshtml", m)
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<!-- Mới cập nhật -->
+@if (recent.Any())
+{
+    <section class="movie-section" data-section="recent">
+        <div class="movie-section-header">
+            <div>
+                <h2 class="movie-section-title">🔥 Mới cập nhật</h2>
+                <p class="movie-section-subtitle">Những bộ phim mới nhất được thêm vào</p>
+            </div>
+            <a href="/movies?sort=recent" class="movie-section-see-all">
+                Xem tất cả <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        <div class="movie-scroll-container">
+            <div class="movie-scroll-wrapper">
+                @foreach (var m in recent)
+                {
+                    <div class="movie-scroll-item">
+                        @await Html.PartialAsync("~/Views/Shared/_MovieCardModern.cshtml", m)
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<!-- Đang thịnh hành -->
+@if (trending.Any())
+{
+    <section class="movie-section" data-section="trending">
+        <div class="movie-section-header">
+            <div>
+                <h2 class="movie-section-title">📈 Đang thịnh hành</h2>
+                <p class="movie-section-subtitle">Xu hướng xem phim hot nhất hiện tại</p>
+            </div>
+            <a href="/movies?sort=trending" class="movie-section-see-all">
+                Xem tất cả <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        <div class="movie-scroll-container">
+            <div class="movie-scroll-wrapper">
+                @foreach (var m in trending)
+                {
+                    <div class="movie-scroll-item">
+                        @await Html.PartialAsync("~/Views/Shared/_MovieCardModern.cshtml", m)
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<!-- Phim mới ra mắt -->
+@if (newReleases.Any())
+{
+    <section class="movie-section" data-section="new-releases">
+        <div class="movie-section-header">
+            <div>
+                <h2 class="movie-section-title">✨ Phim mới ra mắt</h2>
+                <p class="movie-section-subtitle">Những bộ phim vừa được phát hành</p>
+            </div>
+            <a href="/movies?sort=new" class="movie-section-see-all">
+                Xem tất cả <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        <div class="movie-scroll-container">
+            <div class="movie-scroll-wrapper">
+                @foreach (var m in newReleases)
+                {
+                    <div class="movie-scroll-item">
+                        @await Html.PartialAsync("~/Views/Shared/_MovieCardModern.cshtml", m)
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<!-- Gợi ý cho bạn - Blazor Component -->
+<section class="recommendations-special">
+    <div class="recommendations-header">
+        <div class="recommendations-icon">
+            <i class="fas fa-sparkles"></i>
+        </div>
+        <div>
+            <h2 class="recommendations-title">Gợi ý cho bạn</h2>
+            <p class="recommendations-subtitle">Những bộ phim được đề xuất dựa trên sở thích của bạn</p>
+        </div>
+    </div>
+    @{
+        var componentParams = new Dictionary<string, object?>
+        {
+            { "Title", "Đề xuất cho bạn" },
+            { "Type", webxemphim.Components.RecommendedMovies.RecommendationType.Personalized },
+            { "Limit", 8 }
+        };
+    }
+    @(await Html.RenderComponentAsync<webxemphim.Components.RecommendedMovies>(
+        Microsoft.AspNetCore.Mvc.Rendering.RenderMode.Server,
+        componentParams))
+</section>
+
+<!-- Marvel Collection -->
+@{
+    var marvel = ViewBag.Marvel as List<webxemphim.Models.Movie> ?? new List<webxemphim.Models.Movie>();
+}
+@if (marvel.Any())
+{
+    <section class="movie-section-modern" data-section="marvel">
+        <div class="movie-section-header">
+            <div>
+                <h2 class="movie-section-title">🎭 Chủ đề: Marvel</h2>
+                <p class="movie-section-subtitle">Bộ sưu tập phim Marvel đặc sắc</p>
+            </div>
+            <a href="/movies?search=marvel" class="movie-section-see-all">
+                Xem tất cả <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        <div class="movie-scroll-container">
+            <div class="movie-scroll-wrapper" id="scroll-marvel">
+                @foreach (var m in marvel)
+                {
+                    <div class="movie-scroll-item">
+                        @await Html.PartialAsync("~/Views/Shared/_MovieCardModern.cshtml", m)
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<script>
+    // Enhanced smooth scroll for movie sections with momentum
+    document.querySelectorAll('.movie-scroll-wrapper').forEach(wrapper => {
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        let velocity = 0;
+        let lastX = 0;
+        let lastTime = Date.now();
+        let animationFrame;
+
+        // Mouse drag
+        wrapper.addEventListener('mousedown', (e) => {
+            isDown = true;
+            wrapper.style.cursor = 'grabbing';
+            wrapper.style.scrollBehavior = 'auto';
+            startX = e.pageX - wrapper.offsetLeft;
+            scrollLeft = wrapper.scrollLeft;
+            lastX = e.pageX;
+            lastTime = Date.now();
+            velocity = 0;
+        });
+
+        wrapper.addEventListener('mouseleave', () => {
+            isDown = false;
+            wrapper.style.cursor = 'grab';
+            wrapper.style.scrollBehavior = 'smooth';
+        });
+
+        wrapper.addEventListener('mouseup', () => {
+            isDown = false;
+            wrapper.style.cursor = 'grab';
+            wrapper.style.scrollBehavior = 'smooth';
+            
+            // Apply momentum scrolling
+            if (Math.abs(velocity) > 0.5) {
+                const momentum = () => {
+                    wrapper.scrollLeft -= velocity;
+                    velocity *= 0.95;
+                    if (Math.abs(velocity) > 0.5) {
+                        animationFrame = requestAnimationFrame(momentum);
+                    }
+                };
+                momentum();
+            }
+        });
+
+        wrapper.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - wrapper.offsetLeft;
+            const walk = (x - startX) * 2;
+            wrapper.scrollLeft = scrollLeft - walk;
+            
+            // Calculate velocity for momentum
+            const now = Date.now();
+            const timeDelta = now - lastTime;
+            if (timeDelta > 0) {
+                velocity = (e.pageX - lastX) / timeDelta * 16;
+            }
+            lastX = e.pageX;
+            lastTime = now;
+        });
+
+        // Touch support for mobile
+        let touchStartX = 0;
+        let touchScrollLeft = 0;
+
+        wrapper.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].pageX;
+            touchScrollLeft = wrapper.scrollLeft;
+        }, { passive: true });
+
+        wrapper.addEventListener('touchmove', (e) => {
+            if (!touchStartX) return;
+            const x = e.touches[0].pageX;
+            const walk = (touchStartX - x) * 2;
+            wrapper.scrollLeft = touchScrollLeft + walk;
+        }, { passive: true });
+
+        wrapper.addEventListener('touchend', () => {
+            touchStartX = 0;
+        }, { passive: true });
+
+        wrapper.style.cursor = 'grab';
+    });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            const focusedSection = document.querySelector('.movie-scroll-wrapper:focus');
+            if (focusedSection) {
+                e.preventDefault();
+                const scrollAmount = 400;
+                focusedSection.scrollLeft += e.key === 'ArrowLeft' ? -scrollAmount : scrollAmount;
+            }
+        }
+    });
+
+    // Intersection Observer for fade-in animations
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, observerOptions);
+
+    // Observe all movie sections - but ensure they're visible if GSAP doesn't load
+    document.querySelectorAll('.movie-section, .movie-section-modern, .recommendations-special').forEach(section => {
+        // Set initial state but ensure visibility - CRITICAL: Always visible by default
+        section.style.opacity = '1';
+        section.style.transform = 'translateY(0)';
+        section.style.visibility = 'visible';
+        section.style.display = '';
+        section.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        
+        // Ensure all movie items are visible
+        const movieItems = section.querySelectorAll('.movie-scroll-item, .recommendation-card, .movie-card');
+        movieItems.forEach(item => {
+            item.style.opacity = '1';
+            item.style.transform = 'translateX(0) scale(1)';
+            item.style.visibility = 'visible';
+            item.style.display = '';
+        });
+        
+        // Ensure section headers are visible
+        const headers = section.querySelectorAll('.movie-section-header, .movie-section-title, .recommendations-header, .recommendations-title');
+        headers.forEach(header => {
+            header.style.opacity = '1';
+            header.style.transform = 'translateX(0) translateY(0)';
+            header.style.visibility = 'visible';
+        });
+        
+        // Only animate if IntersectionObserver is available
+        if (typeof IntersectionObserver !== 'undefined') {
+            observer.observe(section);
+        }
+    });
+
+    // Parallax effect for hero section
+    const heroSection = document.getElementById('hero-section');
+    if (heroSection) {
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const heroBg = heroSection.querySelector('.hero-bg');
+            if (heroBg) {
+                heroBg.style.transform = `translateY(${scrolled * 0.5}px) scale(1.1)`;
+            }
+        });
+    }
+
+    // Lazy load images with intersection observer
+    const imageObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                if (img.dataset.src) {
+                    img.src = img.dataset.src;
+                    img.removeAttribute('data-src');
+                    imageObserver.unobserve(img);
+                }
+            }
+        });
+    });
+
+    document.querySelectorAll('img[data-src]').forEach(img => {
+        imageObserver.observe(img);
+    });
+
+    // Fix duplicate poster issue - ensure each movie card has its own poster
+    (function() {
+        'use strict';
+        function fixDuplicatePosters() {
+            const movieCards = document.querySelectorAll('.movie-card-modern');
+            const posterMap = new Map();
+            
+            movieCards.forEach((card, index) => {
+                const img = card.querySelector('.movie-card-poster img');
+                if (img) {
+                    const movieId = card.getAttribute('data-movie-id');
+                    const movieSlug = card.getAttribute('data-movie-slug');
+                    const originalPosterUrl = img.getAttribute('data-poster-url');
+                    const currentSrc = img.src;
+                    
+                    // Create unique cache buster for each card
+                    const uniqueKey = movieId || movieSlug || index;
+                    const url = new URL(currentSrc, window.location.origin);
+                    
+                    // Update URL with unique identifier if not already present
+                    if (!url.searchParams.has('id') || url.searchParams.get('id') !== uniqueKey) {
+                        url.searchParams.set('id', uniqueKey);
+                        url.searchParams.set('t', Date.now().toString().slice(-6)); // Add timestamp for cache busting
+                        img.src = url.toString();
+                    }
+                    
+                    // Store poster URL for this movie
+                    const key = movieId || movieSlug || `index-${index}`;
+                    if (posterMap.has(key)) {
+                        // If duplicate detected, force reload with unique timestamp
+                        const timestamp = Date.now();
+                        url.searchParams.set('t', timestamp.toString());
+                        img.src = url.toString();
+                        console.log(`Fixed duplicate poster for movie: ${key}`);
+                    } else {
+                        posterMap.set(key, currentSrc);
+                    }
+                }
+            });
+        }
+        
+        // Run immediately and after DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', fixDuplicatePosters);
+        } else {
+            fixDuplicatePosters();
+        }
+        
+        // Also run after a delay to catch any dynamically loaded content
+        setTimeout(fixDuplicatePosters, 100);
+        setTimeout(fixDuplicatePosters, 500);
+        setTimeout(fixDuplicatePosters, 1000);
+    })();
+</script>

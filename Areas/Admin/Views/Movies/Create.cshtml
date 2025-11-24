@@ -1,0 +1,424 @@
+@model webxemphim.Models.Movie
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Thêm phim";
+}
+
+<section class="glass-card p-4">
+    <h2 class="section-title mb-2">Thêm phim</h2>
+    <div class="section-bar mb-3"></div>
+    <form class="glass-card p-3 mb-3" method="post" asp-area="Admin" asp-controller="Movies" asp-action="ImportFromTmdb">
+        @Html.AntiForgeryToken()
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">TMDb ID</label>
+                <input class="form-control" name="tmdbId" placeholder="vd: 299536" />
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-outline-light" type="submit">Import từ TMDb</button>
+            </div>
+        </div>
+    </form>
+    <form method="post" enctype="multipart/form-data">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Tiêu đề</label>
+                <input asp-for="Title" class="form-control" id="titleInput" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Slug</label>
+                <div class="input-group">
+                    <input asp-for="Slug" class="form-control" id="slugInput" />
+                    <button class="btn btn-outline-light" type="button" id="btnGenSlug">Tạo slug</button>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Năm</label>
+                <input asp-for="Year" class="form-control" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">IMDb</label>
+                <input asp-for="Imdb" class="form-control" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Thời lượng (phút)</label>
+                <input asp-for="DurationMinutes" class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Poster URL</label>
+                <input asp-for="PosterUrl" class="form-control" id="posterInput" />
+                <div class="mt-2">
+                    <img id="posterPreview" src="@(Model.PosterUrl ?? "/favicon.ico")" alt="Poster preview" style="max-height:120px;" />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Tải poster (tùy chọn)</label>
+                <input type="file" name="posterFile" accept="image/*" class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Trailer URL</label>
+                <div class="input-group">
+                    <input asp-for="TrailerUrl" class="form-control" id="trailerInput" placeholder="YouTube/Vimeo URL (watch, youtu.be, vimeo)" />
+                    <button class="btn btn-outline-light" type="button" id="btnNormalizeTrailer">Chuẩn hoá</button>
+                    <button class="btn btn-outline-light" type="button" id="btnPreviewTrailer" data-bs-toggle="modal" data-bs-target="#trailerModal">Xem thử</button>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Quốc gia</label>
+                <input asp-for="Country" class="form-control" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Độ tuổi</label>
+                <input asp-for="AgeRating" class="form-control" />
+            </div>
+            <div class="col-md-4 form-check mt-4">
+                <input asp-for="IsSeries" class="form-check-input" />
+                <label class="form-check-label" for="IsSeries">Phim bộ</label>
+            </div>
+            <div class="col-12">
+                <label class="form-label">Mô tả</label>
+                <textarea asp-for="Description" rows="4" class="form-control"></textarea>
+            </div>
+            <div class="col-12">
+                <label class="form-label">Thể loại</label>
+                <div class="row row-cols-2 row-cols-md-4 g-2">
+                    @foreach (var g in (IEnumerable<webxemphim.Models.Genre>)ViewBag.Genres)
+                    {
+                        <div class="col">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="GenreIds" value="@g.Id" id="genre_@g.Id">
+                                <label class="form-check-label" for="genre_@g.Id">@g.Name</label>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="mt-3 d-flex gap-2">
+            <button class="neon-btn" type="submit">Lưu</button>
+            <a class="btn btn-outline-light" asp-area="Admin" asp-controller="Movies" asp-action="Index">Hủy</a>
+        </div>
+    </form>
+</section>
+
+
+<section class="glass-card p-4 mt-3">
+    <h2 class="section-title mb-2">Nguồn phát (Link phim) - Thêm nhanh</h2>
+    <div class="section-bar mb-3"></div>
+    <div class="small text-white-50 mb-2">Tùy chọn: điền 1 nguồn phát để lưu cùng phim mới.</div>
+    <div class="row g-3">
+        <div class="col-md-3">
+            <label class="form-label">Server</label>
+            <input name="NewSourceServer" class="form-control" value="Server 1" />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Chất lượng</label>
+            <select name="NewSourceQuality" class="form-control">
+                <option value="4K">4K</option>
+                <option value="1080p" selected>1080p</option>
+                <option value="720p">720p</option>
+                <option value="480p">480p</option>
+                <option value="360p">360p</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Ngôn ngữ</label>
+            <select name="NewSourceLanguage" class="form-control">
+                <option value="Vietsub" selected>Vietsub</option>
+                <option value="Thuyết minh">Thuyết minh</option>
+                <option value="Lồng tiếng">Lồng tiếng</option>
+                <option value="English">English</option>
+                <option value="Multi">Multi</option>
+            </select>
+        </div>
+        <div class="col-md-5">
+            <label class="form-label">URL nguồn trực tuyến</label>
+            <input name="NewSourceUrl" class="form-control" placeholder="https://...m3u8 hoặc https://.../embed/..." />
+            <div class="form-text text-white-50">Để trống nếu bạn muốn tải file video từ máy.</div>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Tập</label>
+            <input type="number" name="NewSourceEpisode" class="form-control" min="1" placeholder="1" />
+        </div>
+        <div class="col-md-12 d-flex align-items-center gap-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="NewSourceDefault" id="NewSourceDefault" checked />
+                <label class="form-check-label" for="NewSourceDefault">Đặt nguồn URL này làm mặc định</label>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Hoặc tải lên file video</label>
+            <div class="input-group">
+                <input type="file" name="NewSourceFile" id="videoFileInput" accept="video/*" class="form-control" />
+                <button type="button" class="btn btn-primary" id="btnQuickUpload" disabled>
+                    <i class="fas fa-upload me-1"></i> Tải nhanh
+                </button>
+            </div>
+            @Html.ValidationMessage("NewSourceFile", null, new { @class = "text-danger small d-block mt-1" })
+            <div class="form-text text-white-50">Hỗ trợ mp4, webm,... (tối đa 2GB). File sẽ được lưu trong thư mục uploads/videos.</div>
+            
+            <!-- Progress Bar -->
+            <div id="uploadProgressContainer" class="mt-3" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-white-50 small" id="uploadStatus">Đang tải lên...</span>
+                    <span class="text-white-50 small" id="uploadPercent">0%</span>
+                </div>
+                <div class="progress" style="height: 25px;">
+                    <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" 
+                         role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                        <span id="uploadProgressText">0%</span>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-white-50" id="uploadTimeInfo"></small>
+                </div>
+            </div>
+            
+            <!-- Upload Result -->
+            <div id="uploadResult" class="mt-2" style="display: none;"></div>
+            
+            <!-- Hidden input để lưu URL sau khi upload -->
+            <input type="hidden" id="uploadedVideoUrl" name="NewSourceUrl" />
+        </div>
+        <div class="col-md-6 d-flex align-items-center">
+            <div class="form-check mt-4">
+                <input class="form-check-input" type="checkbox" name="NewSourceLocalDefault" id="NewSourceLocalDefault" checked />
+                <label class="form-check-label" for="NewSourceLocalDefault">Đặt video upload làm nguồn mặc định</label>
+            </div>
+        </div>
+        <div class="col-md-12 d-flex align-items-center gap-3 mt-2">
+            <span class="text-white-50 small">(Nút Lưu ở trên sẽ lưu cả nguồn này nếu hợp lệ)</span>
+        </div>
+    </div>
+</section>
+
+<div class="modal fade" id="trailerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Xem thử Trailer</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="ratio ratio-16x9">
+                    <iframe id="trailerIframe" src="" allowfullscreen frameborder="0"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+<script>
+    const titleInput = document.getElementById('titleInput');
+    const slugInput = document.getElementById('slugInput');
+    const btnGenSlug = document.getElementById('btnGenSlug');
+    const posterInput = document.getElementById('posterInput');
+    const posterPreview = document.getElementById('posterPreview');
+    const trailerInput = document.getElementById('trailerInput');
+    const btnNormalizeTrailer = document.getElementById('btnNormalizeTrailer');
+    const trailerIframe = document.getElementById('trailerIframe');
+
+    function generateSlug(text){
+        return (text||'').toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+            .replace(/[^a-z0-9\s-]/g,'')
+            .trim().replace(/\s+/g,'-').replace(/-+/g,'-');
+    }
+    btnGenSlug?.addEventListener('click', ()=>{
+        slugInput.value = generateSlug(slugInput.value || titleInput.value || 'movie');
+    });
+
+    posterInput?.addEventListener('input', ()=>{
+        posterPreview.src = posterInput.value || '/favicon.ico';
+    });
+
+    function normalizeTrailer(url){
+        if(!url) return url;
+        try{
+            if(url.includes('youtube.com/watch?v=')){
+                const u = new URL(url);
+                const v = u.searchParams.get('v');
+                if(v) return `https://www.youtube.com/embed/${v}`;
+            }
+            if(url.includes('youtu.be/')){
+                const vid = url.split('/').pop();
+                if(vid) return `https://www.youtube.com/embed/${vid}`;
+            }
+            if(url.includes('vimeo.com/') && !url.includes('player.vimeo.com')){
+                const vid = url.split('/').pop();
+                if(vid) return `https://player.vimeo.com/video/${vid}`;
+            }
+        }catch{}
+        return url;
+    }
+
+    btnNormalizeTrailer?.addEventListener('click', ()=>{
+        trailerInput.value = normalizeTrailer(trailerInput.value);
+    });
+    document.getElementById('btnPreviewTrailer')?.addEventListener('click', ()=>{
+        const src = normalizeTrailer(trailerInput.value);
+        trailerIframe.src = src || '';
+    });
+    document.getElementById('trailerModal')?.addEventListener('hidden.bs.modal', ()=>{
+        trailerIframe.src = '';
+    });
+
+    // Video Upload với Progress Bar
+    const videoFileInput = document.getElementById('videoFileInput');
+    const btnQuickUpload = document.getElementById('btnQuickUpload');
+    const uploadProgressContainer = document.getElementById('uploadProgressContainer');
+    const uploadProgressBar = document.getElementById('uploadProgressBar');
+    const uploadProgressText = document.getElementById('uploadProgressText');
+    const uploadPercent = document.getElementById('uploadPercent');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const uploadTimeInfo = document.getElementById('uploadTimeInfo');
+    const uploadResult = document.getElementById('uploadResult');
+    const uploadedVideoUrl = document.getElementById('uploadedVideoUrl');
+
+    // Enable/Disable nút tải nhanh khi chọn file
+    videoFileInput?.addEventListener('change', function() {
+        btnQuickUpload.disabled = !this.files || this.files.length === 0;
+        if (this.files && this.files.length > 0) {
+            const file = this.files[0];
+            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            uploadStatus.textContent = `Sẵn sàng: ${file.name} (${fileSizeMB} MB)`;
+        }
+    });
+
+    // Xử lý upload
+    btnQuickUpload?.addEventListener('click', async function() {
+        const file = videoFileInput.files[0];
+        if (!file) {
+            alert('Vui lòng chọn file video trước');
+            return;
+        }
+
+        // Kiểm tra kích thước file (2GB)
+        const maxSize = 2 * 1024 * 1024 * 1024; // 2GB
+        if (file.size > maxSize) {
+            alert('File quá lớn! Tối đa 2GB');
+            return;
+        }
+
+        // Hiển thị progress bar
+        uploadProgressContainer.style.display = 'block';
+        uploadResult.style.display = 'none';
+        btnQuickUpload.disabled = true;
+        videoFileInput.disabled = true;
+
+        // Reset progress
+        updateProgress(0);
+        uploadStatus.textContent = 'Đang tải lên...';
+        uploadTimeInfo.textContent = '';
+
+        const startTime = Date.now();
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const xhr = new XMLHttpRequest();
+
+            // Track upload progress
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    updateProgress(percentComplete);
+                    
+                    // Tính thời gian còn lại
+                    const elapsed = (Date.now() - startTime) / 1000; // seconds
+                    const uploaded = e.loaded;
+                    const total = e.total;
+                    const speed = uploaded / elapsed; // bytes per second
+                    const remaining = (total - uploaded) / speed; // seconds
+                    
+                    const remainingMinutes = Math.floor(remaining / 60);
+                    const remainingSeconds = Math.floor(remaining % 60);
+                    
+                    if (remaining > 0 && remaining < 3600) {
+                        uploadTimeInfo.textContent = `Còn lại: ${remainingMinutes} phút ${remainingSeconds} giây`;
+                    }
+                }
+            });
+
+            // Xử lý khi upload hoàn tất
+            xhr.addEventListener('load', function() {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    updateProgress(100);
+                    uploadStatus.textContent = 'Tải lên thành công!';
+                    uploadTimeInfo.textContent = '';
+                    
+                    // Hiển thị kết quả
+                    uploadResult.innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>Tải lên thành công!</strong><br>
+                            File: ${response.fileName}<br>
+                            URL: <code>${response.url}</code>
+                        </div>
+                    `;
+                    uploadResult.style.display = 'block';
+                    
+                    // Lưu URL vào hidden input
+                    uploadedVideoUrl.value = response.url;
+                    
+                    // Disable nút và input
+                    btnQuickUpload.disabled = true;
+                    videoFileInput.disabled = false;
+                } else {
+                    const error = xhr.responseText ? JSON.parse(xhr.responseText) : { error: 'Lỗi không xác định' };
+                    uploadStatus.textContent = 'Tải lên thất bại';
+                    uploadResult.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            <strong>Lỗi:</strong> ${error.error || 'Không thể tải lên file'}
+                        </div>
+                    `;
+                    uploadResult.style.display = 'block';
+                    btnQuickUpload.disabled = false;
+                    videoFileInput.disabled = false;
+                }
+            });
+
+            // Xử lý lỗi
+            xhr.addEventListener('error', function() {
+                uploadStatus.textContent = 'Lỗi kết nối';
+                uploadResult.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Lỗi kết nối:</strong> Không thể kết nối đến server
+                    </div>
+                `;
+                uploadResult.style.display = 'block';
+                btnQuickUpload.disabled = false;
+                videoFileInput.disabled = false;
+            });
+
+            // Gửi request
+            xhr.open('POST', '/api/Upload/video');
+            xhr.send(formData);
+
+        } catch (error) {
+            uploadStatus.textContent = 'Lỗi';
+            uploadResult.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong>Lỗi:</strong> ${error.message}
+                </div>
+            `;
+            uploadResult.style.display = 'block';
+            btnQuickUpload.disabled = false;
+            videoFileInput.disabled = false;
+        }
+    });
+
+    function updateProgress(percent) {
+        const rounded = Math.round(percent);
+        uploadProgressBar.style.width = rounded + '%';
+        uploadProgressBar.setAttribute('aria-valuenow', rounded);
+        uploadProgressText.textContent = rounded + '%';
+        uploadPercent.textContent = rounded + '%';
+    }
+</script>
+
+

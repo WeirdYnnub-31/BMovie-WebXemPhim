@@ -1,0 +1,42 @@
+@page "/faq"
+@model webxemphim.Pages.FaqModel
+@{
+    ViewData["Title"] = "Hỏi-Đáp";
+    ViewData["Description"] = "Những câu hỏi thường gặp khi sử dụng bmovie – nền tảng xem phim hiện đại.";
+}
+@await Html.PartialAsync("~/Views/Shared/_SeoMeta.cshtml")
+
+<section class="glass-card p-4 p-md-5 mb-4">
+	<h1 class="section-title mb-2">Hỏi-Đáp</h1>
+	<div class="section-bar mb-3"></div>
+	<p class="text-white-50 mb-0">Nếu chưa tìm thấy câu trả lời, vui lòng liên hệ <a href="/contact">/contact</a>.</p>
+</section>
+
+<section class="glass-card p-4 p-md-5 mb-4">
+	<h3 class="h5 mb-3">Sử dụng cơ bản</h3>
+	<div class="accordion" id="faqBasic">
+		<div class="accordion-item">
+			<h2 class="accordion-header" id="b1"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#ba1">bmovie có miễn phí không?</button></h2>
+			<div id="ba1" class="accordion-collapse collapse" data-bs-parent="#faqBasic"><div class="accordion-body text-white-50">bmovie miễn phí truy cập các nội dung hỗ trợ; một số tính năng có thể yêu cầu đăng nhập.</div></div>
+		</div>
+		<div class="accordion-item">
+			<h2 class="accordion-header" id="b2"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#ba2">Vì sao phim không phát được?</button></h2>
+			<div id="ba2" class="accordion-collapse collapse" data-bs-parent="#faqBasic"><div class="accordion-body text-white-50">Hãy thử làm mới trang, đổi server nguồn, kiểm tra mạng. Nếu vẫn lỗi, gửi thông tin phim/ảnh màn hình qua mục Liên hệ.</div></div>
+		</div>
+	</div>
+</section>
+
+<section class="glass-card p-4 p-md-5">
+	<h3 class="h5 mb-3">Tài khoản & bảo mật</h3>
+	<div class="accordion" id="faqAccount">
+		<div class="accordion-item">
+			<h2 class="accordion-header" id="a1"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#aa1">Tôi có thể xoá tài khoản không?</button></h2>
+			<div id="aa1" class="accordion-collapse collapse" data-bs-parent="#faqAccount"><div class="accordion-body text-white-50">Có. Gửi yêu cầu xoá tới privacy@bmovie.local từ email đã đăng ký để được hỗ trợ.</div></div>
+		</div>
+		<div class="accordion-item">
+			<h2 class="accordion-header" id="a2"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#aa2">bmovie lưu dữ liệu gì?</button></h2>
+			<div id="aa2" class="accordion-collapse collapse" data-bs-parent="#faqAccount"><div class="accordion-body text-white-50">Chúng tôi lưu các thông tin kỹ thuật (cookie, IP), lịch sử xem và đánh giá để cá nhân hoá – chi tiết ở trang Chính sách bảo mật.</div></div>
+		</div>
+	</div>
+</section>
+

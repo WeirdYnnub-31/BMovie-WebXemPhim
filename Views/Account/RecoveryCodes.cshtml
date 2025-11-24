@@ -1,0 +1,16 @@
+@{
+    ViewData["Title"] = "Mã khôi phục 2FA";
+}
+<section class="glass-card p-4">
+    <h2 class="section-title mb-2">Mã khôi phục</h2>
+    <div class="section-bar mb-3"></div>
+    <div class="alert alert-warning">Lưu các mã này ở nơi an toàn. Mỗi mã chỉ dùng được một lần khi bạn mất quyền truy cập ứng dụng Authenticator.</div>
+    <div class="row g-2">
+        @foreach (var code in (string[])ViewBag.Codes)
+        {
+            <div class="col-6 col-md-3"><code class="d-block p-2 rounded-3 bg-glass">@code</code></div>
+        }
+    </div>
+</section>
+
+

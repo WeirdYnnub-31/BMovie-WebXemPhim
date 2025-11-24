@@ -1,0 +1,176 @@
+@using webxemphim.Models
+@using webxemphim.Models.DTOs
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Net.Http.Json
+@inject IHttpClientFactory HttpClientFactory
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+
+<div class="recommendations-container">
+    <h2 class="recommendations-title">
+        @if (IsLoading)
+        {
+            <span>✨ Đang tải đề xuất...</span>
+        }
+        else
+        {
+            <span>✨ @Title</span>
+        }
+    </h2>
+
+    @if (IsLoading)
+    {
+        <div class="skeleton-loader">
+            @for (int i = 0; i < Limit; i++)
+            {
+                <div class="skeleton-card">
+                    <div class="skeleton-poster"></div>
+                    <div class="skeleton-info">
+                        <div class="skeleton-title"></div>
+                        <div class="skeleton-meta"></div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else if (Recommendations != null && Recommendations.Any())
+    {
+        <div class="recommendations-grid">
+            @foreach (var movie in Recommendations)
+            {
+                <div class="recommendation-card" @onclick="() => NavigateToMovie(movie.Slug)">
+                    <div class="card-image">
+                        <img src="@GetPosterUrl(movie.PosterUrl)" 
+                             alt="@movie.Title" 
+                             loading="lazy" />
+                        <div class="card-overlay">
+                            <button class="play-btn" @onclick:stopPropagation="true" @onclick="() => NavigateToMovie(movie.Slug)">
+                                ▶ Xem ngay
+                            </button>
+                        </div>
+                        @if (movie.Imdb.HasValue)
+                        {
+                            <div class="card-badge rating-badge">
+                                ⭐ @movie.Imdb.Value.ToString("F1")
+                            </div>
+                        }
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">@movie.Title</h3>
+                        <div class="card-meta">
+                            @if (movie.Year.HasValue)
+                            {
+                                <span class="year">@movie.Year</span>
+                            }
+                            @if (movie.ViewCount > 0)
+                            {
+                                <span class="views">👁️ @FormatViewCount(movie.ViewCount)</span>
+                            }
+                        </div>
+                        @if (movie.Genres != null && movie.Genres.Any())
+                        {
+                            <p class="genre-tags">
+                                @string.Join(", ", movie.Genres.Take(3))
+                            </p>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else if (!IsLoading)
+    {
+        <div class="empty-state">
+            <p>Không có đề xuất nào tại thời điểm này.</p>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Đề xuất cho bạn";
+    [Parameter] public RecommendationType Type { get; set; } = RecommendationType.Personalized;
+    [Parameter] public int Limit { get; set; } = 8;
+    [Parameter] public int? MovieId { get; set; } // For similar movies
+
+    private List<MovieDto>? Recommendations;
+    private bool IsLoading = true;
+    private string? UserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRecommendations();
+    }
+
+    private async Task LoadRecommendations()
+    {
+        IsLoading = true;
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            UserId = authState.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+            var httpClient = HttpClientFactory.CreateClient();
+            httpClient.BaseAddress = new Uri(Navigation.BaseUri);
+
+            string endpoint = Type switch
+            {
+                RecommendationType.Personalized => UserId != null 
+                    ? $"/api/v2/recommendations?limit={Limit}" 
+                    : $"/api/v2/recommendations/anonymous?limit={Limit}",
+                RecommendationType.Trending => $"/api/v2/recommendations/trending?limit={Limit}",
+                RecommendationType.NewReleases => $"/api/v2/recommendations/new-releases?limit={Limit}",
+                RecommendationType.Similar => MovieId.HasValue 
+                    ? $"/api/v2/recommendations/similar/{MovieId}?limit={Limit}" 
+                    : $"/api/v2/recommendations/anonymous?limit={Limit}",
+                _ => $"/api/v2/recommendations/anonymous?limit={Limit}"
+            };
+
+            var response = await httpClient.GetFromJsonAsync<List<MovieDto>>(endpoint);
+            Recommendations = response ?? new List<MovieDto>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading recommendations: {ex.Message}");
+            Recommendations = new List<MovieDto>();
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private string GetPosterUrl(string? posterUrl)
+    {
+        if (string.IsNullOrWhiteSpace(posterUrl))
+            return "/favicon.ico";
+        
+        if (posterUrl.StartsWith("http"))
+            return $"/img/resize?url={Uri.EscapeDataString(posterUrl)}&w=300&q=80";
+        
+        return posterUrl;
+    }
+
+    private string FormatViewCount(long viewCount)
+    {
+        if (viewCount >= 1000000)
+            return $"{viewCount / 1000000.0:F1}M";
+        if (viewCount >= 1000)
+            return $"{viewCount / 1000.0:F1}K";
+        return viewCount.ToString();
+    }
+
+    private async Task NavigateToMovie(string slug)
+    {
+        Navigation.NavigateTo($"/movies/watch/{slug}");
+    }
+
+    public enum RecommendationType
+    {
+        Personalized,
+        Trending,
+        NewReleases,
+        Similar
+    }
+}
+

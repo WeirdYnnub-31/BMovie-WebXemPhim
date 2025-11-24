@@ -1,0 +1,133 @@
+@model IEnumerable<dynamic>
+@{
+    ViewData["Title"] = "Lịch sử xem";
+}
+
+<section class="mb-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h2 class="section-title mb-1">Lịch sử xem</h2>
+            <div class="section-bar"></div>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-light" onclick="clearHistory()">
+                <i class="fas fa-trash me-2"></i>Xóa tất cả
+            </button>
+        </div>
+    </div>
+    
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success">@TempData["Message"]</div>
+    }
+</section>
+
+<section class="mb-5">
+    @if (Model?.Any() == true)
+    {
+        <div class="row g-3">
+            @foreach (var item in Model)
+            {
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="glass-card p-3 h-100">
+                        <div class="d-flex gap-3">
+                            <div class="movie-poster" style="width: 80px; height: 120px; background-image: url('@(item.Movie.PosterUrl ?? "/favicon.ico")'); background-size: cover; background-position: center; border-radius: 8px; flex-shrink: 0;"></div>
+                            <div class="flex-grow-1">
+                                <h6 class="fw-bold mb-2">@item.Movie.Title</h6>
+                                <div class="text-white-50 small mb-2">
+                                    <div>Lần cuối: @item.LastWatched.ToString("dd/MM/yyyy HH:mm")</div>
+                                    <div>Đã xem: @item.WatchCount lần</div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <a class="btn btn-sm neon-btn" href="@Url.Action("Watch", "Movies", new { slug = item.Movie.Slug })">
+                                        <i class="fas fa-play me-1"></i>Tiếp tục xem
+                                    </a>
+                                    <a class="btn btn-sm btn-outline-light" href="@Url.Action("Detail", "Movies", new { slug = item.Movie.Slug })">
+                                        <i class="fas fa-info me-1"></i>Chi tiết
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="removeFromHistory(@item.Movie.Id)">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="glass-card p-5 text-center">
+            <i class="fas fa-history fa-3x text-white-50 mb-3"></i>
+            <h4 class="text-white-50 mb-2">Chưa có lịch sử xem</h4>
+            <p class="text-white-50 mb-3">Bắt đầu xem phim để tạo lịch sử xem của bạn.</p>
+            <a class="neon-btn" href="@Url.Action("Index", "Movies")">
+                <i class="fas fa-play me-2"></i>Khám phá phim
+            </a>
+        </div>
+    }
+</section>
+
+<script>
+function clearHistory() {
+    if (confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử xem?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '@Url.Action("ClearHistory")';
+        
+        const token = document.querySelector('input[name="__RequestVerificationToken"]');
+        if (token) {
+            form.appendChild(token.cloneNode());
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+async function removeFromHistory(movieId) {
+    if (confirm('Bạn có chắc chắn muốn xóa phim này khỏi lịch sử xem?')) {
+        try {
+            const response = await fetch('@Url.Action("RemoveFromHistory")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: `movieId=${movieId}`
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                location.reload();
+            } else {
+                alert(result.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra khi xóa phim khỏi lịch sử.');
+        }
+    }
+}
+</script>
+
+<style>
+.movie-poster {
+    transition: transform 0.2s ease;
+}
+
+.movie-poster:hover {
+    transform: scale(1.05);
+}
+
+.glass-card {
+    transition: all 0.2s ease;
+}
+
+.glass-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(162, 89, 217, 0.15);
+}
+</style>

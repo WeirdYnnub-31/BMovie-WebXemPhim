@@ -1,0 +1,168 @@
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Quản lý Server";
+}
+
+<div class="admin-dashboard">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="section-title">Quản lý Server</h2>
+        <form method="post" asp-action="ForceGC" class="d-inline">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-sm btn-outline-warning">🗑️ Force GC</button>
+        </form>
+    </div>
+
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-info glass-card p-3 mb-4">@TempData["Message"]</div>
+    }
+
+    <!-- Process Info -->
+    <div class="panel mb-4">
+        <h3>Thông tin Process</h3>
+        <div class="stats-row">
+            <div class="stats-pill">
+                <span class="text-white-50">Process ID</span>
+                <strong>@ViewBag.ProcessInfo.ProcessId</strong>
+            </div>
+            <div class="stats-pill">
+                <span class="text-white-50">Process Name</span>
+                <strong>@ViewBag.ProcessInfo.ProcessName</strong>
+            </div>
+            <div class="stats-pill">
+                <span class="text-white-50">Uptime</span>
+                <strong>@ViewBag.ProcessInfo.Uptime.Days ngày @ViewBag.ProcessInfo.Uptime.Hours giờ</strong>
+            </div>
+            <div class="stats-pill">
+                <span class="text-white-50">Threads</span>
+                <strong>@ViewBag.ProcessInfo.ThreadCount</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Memory Info -->
+    <div class="panel mb-4">
+        <h3>Bộ nhớ</h3>
+        <div class="stats-row">
+            <div class="stats-pill">
+                <span class="text-white-50">Working Set</span>
+                <strong>@ViewBag.ProcessInfo.WorkingSetMB MB</strong>
+            </div>
+            <div class="stats-pill">
+                <span class="text-white-50">Private Memory</span>
+                <strong>@ViewBag.ProcessInfo.PrivateMemoryMB MB</strong>
+            </div>
+            <div class="stats-pill">
+                <span class="text-white-50">Virtual Memory</span>
+                <strong>@ViewBag.ProcessInfo.VirtualMemoryMB MB</strong>
+            </div>
+            <div class="stats-pill">
+                <span class="text-white-50">GC Memory</span>
+                <strong>@ViewBag.ProcessInfo.GCMemoryMB MB</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Environment Info -->
+    <div class="panel mb-4">
+        <h3>Môi trường</h3>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="glass-card p-3">
+                    <strong>Machine Name:</strong> @ViewBag.Environment.MachineName<br>
+                    <strong>Processor Count:</strong> @ViewBag.Environment.ProcessorCount<br>
+                    <strong>OS Version:</strong> @ViewBag.Environment.OSVersion<br>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="glass-card p-3">
+                    <strong>.NET Version:</strong> @ViewBag.Environment.FrameworkVersion<br>
+                    <strong>64-bit Process:</strong> @ViewBag.Environment.Is64BitProcess<br>
+                    <strong>64-bit OS:</strong> @ViewBag.Environment.Is64BitOperatingSystem<br>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Disk Info -->
+    <div class="panel mb-4">
+        <h3>Ổ đĩa</h3>
+        <div class="table-modern">
+            <table class="table table-dark table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Ổ đĩa</th>
+                        <th>Loại</th>
+                        <th>Tổng dung lượng</th>
+                        <th>Đã dùng</th>
+                        <th>Còn trống</th>
+                        <th>Tỷ lệ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var drive in ViewBag.Drives)
+                    {
+                        <tr>
+                            <td><strong>@drive.Name</strong> @(drive.Label)</td>
+                            <td>@drive.Type</td>
+                            <td>@drive.TotalSizeGB GB</td>
+                            <td>@drive.UsedSpaceGB GB</td>
+                            <td>@drive.AvailableSpaceGB GB</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar @(drive.PercentUsed > 90 ? "bg-danger" : drive.PercentUsed > 70 ? "bg-warning" : "bg-success")" 
+                                         role="progressbar" 
+                                         style="width: @drive.PercentUsed%">
+                                        @drive.PercentUsed%
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Health Status -->
+    <div class="panel">
+        <h3>Trạng thái sức khỏe</h3>
+        <div class="stats-row">
+            @{
+                var memoryPercent = ViewBag.ProcessInfo.WorkingSetMB > 2000 ? "warning" : "success";
+                var diskStatus = ViewBag.Drives.Count > 0 && ViewBag.Drives[0].PercentUsed > 90 ? "danger" : "success";
+            }
+            <div class="stats-pill">
+                <span class="text-white-50">Memory Status</span>
+                <strong class="text-@memoryPercent">
+                    @if (ViewBag.ProcessInfo.WorkingSetMB > 2000)
+                    {
+                        <text>⚠️ Cao</text>
+                    }
+                    else
+                    {
+                        <text>✅ Bình thường</text>
+                    }
+                </strong>
+            </div>
+            <div class="stats-pill">
+                <span class="text-white-50">Disk Status</span>
+                <strong class="text-@diskStatus">
+                    @if (ViewBag.Drives.Count > 0 && ViewBag.Drives[0].PercentUsed > 90)
+                    {
+                        <text>⚠️ Gần đầy</text>
+                    }
+                    else
+                    {
+                        <text>✅ Bình thường</text>
+                    }
+                </strong>
+            </div>
+            <div class="stats-pill">
+                <span class="text-white-50">Server Status</span>
+                <strong class="text-success">✅ Đang chạy</strong>
+            </div>
+        </div>
+    </div>
+</div>
+

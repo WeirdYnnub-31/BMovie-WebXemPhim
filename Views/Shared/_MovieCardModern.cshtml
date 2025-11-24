@@ -1,0 +1,53 @@
+@model webxemphim.Models.Movie
+
+@{
+// Add unique identifier to prevent caching issues and ensure each movie has its own poster
+var posterCacheKey = Model.Id > 0 ? Model.Id.ToString() : (Model.Slug ?? Guid.NewGuid().ToString());
+var posterUrl = !string.IsNullOrWhiteSpace(Model.PosterUrl) 
+    ? $"/img/resize?url={System.Net.WebUtility.UrlEncode(Model.PosterUrl)}&w=400&q=75&id={posterCacheKey}"
+    : $"/favicon.ico?id={posterCacheKey}";
+    var title = Model.Title ?? "Không rõ";
+    var imdb = Model.Imdb?.ToString("0.0") ?? "-";
+    var year = Model.Year?.ToString() ?? "";
+    var genres = Model.MovieGenres?.Select(g => g.Genre.Name).ToList() ?? new List<string>();
+var watchUrl = Url.Action("Watch", "Movies", new { slug = Model.Slug });
+var detailUrl = Url.Action("Detail", "Movies", new { slug = Model.Slug });
+}
+
+<a href="@detailUrl" class="movie-card-modern-link" data-movie-id="@Model.Id" data-movie-slug="@Model.Slug">
+    <div class="movie-card-modern">
+        <div class="movie-card-poster">
+            <img src="@posterUrl" alt="@title" loading="lazy" decoding="async" data-poster-url="@Model.PosterUrl" />
+            <div class="movie-card-overlay">
+                <div class="movie-card-actions">
+                    <button type="button"
+                            class="movie-card-btn"
+                            onclick="event.stopPropagation(); window.location.href='@watchUrl';"
+                            aria-label="Xem phim @title">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button type="button"
+                            class="movie-card-btn"
+                            onclick="event.stopPropagation(); window.location.href='@detailUrl';"
+                            aria-label="Chi tiết @title">
+                        <i class="fas fa-info-circle"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="movie-card-info">
+            <h6 class="movie-card-title">@title</h6>
+            <div class="movie-card-meta">
+                @if (Model.Imdb.HasValue)
+                {
+                    <span>⭐ @imdb</span>
+                }
+                @if (!string.IsNullOrEmpty(year))
+                {
+                    <span>@year</span>
+                }
+            </div>
+        </div>
+    </div>
+</a>
+

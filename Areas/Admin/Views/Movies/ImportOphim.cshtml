@@ -1,0 +1,16 @@
+@{
+    ViewData["Title"]="Import phim từ Ophim API";
+}
+<section class="mb-5">
+    <h1 class="h4 fw-bold mb-3">Import phim từ Ophim</h1>
+    <form method="post" class="glass-card p-4 rounded-4 mb-4 bg-dark border-0" asp-action="ImportOphim">
+        <label class="form-label mb-2">Nhập slug phim (mã đường dẫn trên ophim1.com)</label>
+        <input class="form-control rounded-pill mb-3" name="ophimSlug" placeholder="vd: ki-si-bong-dem-2008" required />
+        <button class="btn neon-btn rounded-pill px-4" type="submit">Import Ophim</button>
+        <div class="form-text mt-2">VD slug: <span class="text-warning">one-piece</span>, <span class="text-info">attack-on-titan</span> — Lấy slug từ url <span class="text-secondary">https://ophim1.com/phim/<b>attack-on-titan</b></span></div>
+    </form>
+    @if (ViewBag.ImportResult != null)
+    {
+        <div class="alert alert-info bg-glass border-0 rounded-4 text-center">@ViewBag.ImportResult</div>
+    }
+</section>

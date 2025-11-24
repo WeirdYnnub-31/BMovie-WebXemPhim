@@ -1,0 +1,90 @@
+@model List<webxemphim.Models.MovieSource>
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    var movie = (webxemphim.Models.Movie)ViewBag.Movie;
+    ViewData["Title"] = $"Nguồn phát • {movie.Title}";
+}
+
+<section class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="section-title mb-0">Nguồn phát: @movie.Title</h2>
+        <a class="neon-btn" asp-area="Admin" asp-controller="MovieSources" asp-action="Create" asp-route-movieId="@movie.Id">Thêm nguồn</a>
+    </div>
+    <div class="section-bar mb-3"></div>
+    <form method="get" class="glass-card p-3 mb-3">
+        <input type="hidden" name="movieId" value="@movie.Id" />
+        <div class="row g-2">
+            <div class="col-md-4">
+                <label class="form-label">Ngôn ngữ</label>
+                <select name="language" class="form-select">
+                    <option value="">Tất cả</option>
+                    @foreach (var l in (IEnumerable<string>)ViewBag.Languages){
+                        if ((string)ViewBag.FilterLanguage == l){
+                            <option value="@l" selected>@l</option>
+                        }else{
+                            <option value="@l">@l</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Chất lượng</label>
+                <select name="quality" class="form-select">
+                    <option value="">Tất cả</option>
+                    @foreach (var q in (IEnumerable<string>)ViewBag.Qualities){
+                        if ((string)ViewBag.FilterQuality == q){
+                            <option value="@q" selected>@q</option>
+                        }else{
+                            <option value="@q">@q</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Sắp xếp</label>
+                <select name="sort" class="form-select">
+                    @if ((string)ViewBag.Sort=="server"){<option value="server" selected>Server</option>} else {<option value="server">Server</option>}
+                    @if ((string)ViewBag.Sort=="quality"){<option value="quality" selected>Chất lượng</option>} else {<option value="quality">Chất lượng</option>}
+                    @if ((string)ViewBag.Sort=="lang"){<option value="lang" selected>Ngôn ngữ</option>} else {<option value="lang">Ngôn ngữ</option>}
+                </select>
+            </div>
+            <div class="col-12">
+                <button class="neon-btn" type="submit">Lọc</button>
+            </div>
+        </div>
+    </form>
+    <div class="glass-card p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Server</th>
+                        <th>Quality</th>
+                        <th>Language</th>
+                        <th>URL</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var s in Model)
+                {
+                    <tr>
+                        <td>@s.ServerName @(s.IsDefault?"<span class=\"badge bg-success ms-1\">Default</span>":"")</td>
+                        <td>@s.Quality</td>
+                        <td>@s.Language</td>
+                        <td class="text-break">@s.Url</td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-light" asp-area="Admin" asp-controller="MovieSources" asp-action="Edit" asp-route-id="@s.Id">Sửa</a>
+                            <form method="post" asp-area="Admin" asp-controller="MovieSources" asp-action="Delete" asp-route-id="@s.Id" class="d-inline">
+                                <button class="btn btn-sm btn-danger" onclick="return confirm('Xóa nguồn?');">Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+

@@ -1,0 +1,221 @@
+@model List<webxemphim.Models.ApiKey>
+@{
+    ViewData["Title"] = "Quản lý API Keys";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Quản lý API Keys</h2>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createApiKeyModal">Tạo API Key mới</button>
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info bg-glass border-0 rounded-4 text-center">
+            <p class="mb-0">Bạn chưa có API key nào.</p>
+            <button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#createApiKeyModal">Tạo API Key đầu tiên</button>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-dark table-striped">
+                <thead>
+                    <tr>
+                        <th>Tên</th>
+                        <th>Key (một phần)</th>
+                        <th>Trạng thái</th>
+                        <th>Rate Limit</th>
+                        <th>Số request</th>
+                        <th>Hết hạn</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var apiKey in Model)
+                    {
+                        <tr>
+                            <td>@apiKey.Name</td>
+                            <td>@(apiKey.Key.Substring(0, Math.Min(20, apiKey.Key.Length)))...</td>
+                            <td>
+                                @if (apiKey.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactive</span>
+                                }
+                            </td>
+                            <td>@apiKey.RateLimit/giờ</td>
+                            <td>@apiKey.RequestCount</td>
+                            <td>@(apiKey.ExpiresAt?.ToString("dd/MM/yyyy") ?? "Không hết hạn")</td>
+                            <td>
+                                <button class="btn btn-sm btn-danger" onclick="revokeApiKey(@apiKey.Id)">Thu hồi</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteApiKey(@apiKey.Id)">Xóa</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <!-- Create API Key Modal -->
+    <div class="modal fade" id="createApiKeyModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title">Tạo API Key mới</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createApiKeyForm">
+                        <div class="mb-3">
+                            <label class="form-label">Tên</label>
+                            <input type="text" class="form-control" name="name" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ngày hết hạn (tùy chọn)</label>
+                            <input type="date" class="form-control" name="expiresAt" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Rate Limit (requests/giờ)</label>
+                            <input type="number" class="form-control" name="rateLimit" value="1000" min="1" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">IP được phép (tùy chọn, phân cách bằng dấu phẩy)</label>
+                            <input type="text" class="form-control" name="allowedIps" placeholder="192.168.1.1, 10.0.0.1" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Endpoints được phép (tùy chọn, phân cách bằng dấu phẩy)</label>
+                            <input type="text" class="form-control" name="allowedEndpoints" placeholder="/api/public/movies, /api/public/genres" />
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="createApiKey()">Tạo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Key Display Modal -->
+    <div class="modal fade" id="apiKeyDisplayModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title">API Key đã tạo</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <strong>Lưu ý:</strong> API Key này chỉ hiển thị một lần. Vui lòng lưu lại ngay!
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">API Key:</label>
+                        <input type="text" class="form-control" id="displayApiKey" readonly />
+                        <button class="btn btn-sm btn-outline-light mt-2" onclick="copyApiKey()">Sao chép</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function createApiKey() {
+        const form = document.getElementById('createApiKeyForm');
+        const formData = new FormData(form);
+        
+        const data = {
+            name: formData.get('name'),
+            expiresAt: formData.get('expiresAt') ? new Date(formData.get('expiresAt')).toISOString() : null,
+            rateLimit: parseInt(formData.get('rateLimit')) || 1000,
+            allowedIps: formData.get('allowedIps') || null,
+            allowedEndpoints: formData.get('allowedEndpoints') ? formData.get('allowedEndpoints').split(',').map(e => e.trim()) : null
+        };
+
+        try {
+            const response = await fetch('/api/apikeys', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                document.getElementById('displayApiKey').value = result.key;
+                const createModal = bootstrap.Modal.getInstance(document.getElementById('createApiKeyModal'));
+                createModal.hide();
+                const displayModal = new bootstrap.Modal(document.getElementById('apiKeyDisplayModal'));
+                displayModal.show();
+                form.reset();
+                // Reload page after 5 seconds
+                setTimeout(() => {
+                    window.location.reload();
+                }, 5000);
+            } else {
+                const error = await response.json();
+                alert('Lỗi: ' + (error.error || 'Không thể tạo API key'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra khi tạo API key');
+        }
+    }
+
+    function copyApiKey() {
+        const apiKeyInput = document.getElementById('displayApiKey');
+        apiKeyInput.select();
+        document.execCommand('copy');
+        alert('Đã sao chép API key!');
+    }
+
+    async function revokeApiKey(id) {
+        if (!confirm('Bạn có chắc muốn thu hồi API key này?')) return;
+
+        try {
+            const response = await fetch(`/api/apikeys/${id}/revoke`, {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                alert('API key đã được thu hồi');
+                window.location.reload();
+            } else {
+                alert('Không thể thu hồi API key');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra');
+        }
+    }
+
+    async function deleteApiKey(id) {
+        if (!confirm('Bạn có chắc muốn xóa API key này? Hành động này không thể hoàn tác.')) return;
+
+        try {
+            const response = await fetch(`/api/apikeys/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                alert('API key đã được xóa');
+                window.location.reload();
+            } else {
+                alert('Không thể xóa API key');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra');
+        }
+    }
+</script>
+

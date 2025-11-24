@@ -1,0 +1,46 @@
+@model webxemphim.Views.Shared.Components.Navigation.NavigationViewModel
+
+<ul class="navbar-nav me-auto mb-0 flex-row gap-2">
+    @{ var ctl = (ViewContext.RouteData.Values["controller"] as string) ?? ""; var act = (ViewContext.RouteData.Values["action"] as string) ?? ""; var path = Context.Request.Path.Value ?? string.Empty; }
+    <li class="nav-item"><a class="nav-link text-nowrap px-2 @(ctl=="Home"&&act=="Index"?"active":"")" asp-controller="Home" asp-action="Index">Trang chủ</a></li>
+    <li class="nav-item"><a class="nav-link text-nowrap px-2 @(act=="SingleMovies"?"active":"")" asp-controller="Movies" asp-action="SingleMovies">Phim Lẻ</a></li>
+    <li class="nav-item"><a class="nav-link text-nowrap px-2 @(act=="SeriesMovies"?"active":"")" asp-controller="Movies" asp-action="SeriesMovies">Phim Bộ</a></li>
+    <li class="nav-item dropdown">
+        <a class="nav-link text-nowrap px-2 dropdown-toggle" href="#" id="genreDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Thể loại
+        </a>
+        <ul class="dropdown-menu glass-navbar bg-black-opaque shadow-neon" aria-labelledby="genreDropdown">
+            @if (Model.Genres.Any())
+            {
+                @foreach (var genre in Model.Genres)
+                {
+                    <li><a class="dropdown-item" asp-controller="Movies" asp-action="Index" asp-route-genre="@genre.Slug">@genre.Name</a></li>
+                }
+            }
+            else
+            {
+                <li><span class="dropdown-item-text text-muted">Chưa có thể loại</span></li>
+            }
+        </ul>
+    </li>
+    <li class="nav-item dropdown">
+        <a class="nav-link text-nowrap px-2 dropdown-toggle" href="#" id="countryDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Quốc gia
+        </a>
+        <ul class="dropdown-menu glass-navbar bg-black-opaque shadow-neon" aria-labelledby="countryDropdown">
+            @if (Model.Countries.Any())
+            {
+                @foreach (var country in Model.Countries.Take(20))
+                {
+                    <li><a class="dropdown-item" asp-controller="Movies" asp-action="Search" asp-route-country="@country">@country</a></li>
+                }
+            }
+            else
+            {
+                <li><span class="dropdown-item-text text-muted">Chưa có quốc gia</span></li>
+            }
+        </ul>
+    </li>
+    <li class="nav-item"><a class="nav-link text-nowrap px-2 @(path.StartsWith("/movies/explorer", StringComparison.OrdinalIgnoreCase) ? "active" : string.Empty)" asp-page="/Movies/Explorer">Khám phá</a></li>
+</ul>
+

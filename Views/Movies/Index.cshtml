@@ -1,0 +1,83 @@
+@model List<webxemphim.Models.MovieViewModel>
+@{
+    var action = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    var isSeries = action == "SeriesMovies";
+    var isSingle = action == "SingleMovies";
+    
+    if (isSeries)
+    {
+        ViewData["Title"] = "Phim Bộ";
+    }
+    else if (isSingle)
+    {
+        ViewData["Title"] = "Phim Lẻ";
+    }
+    else
+    {
+        ViewData["Title"] = "Phim phổ biến";
+    }
+    
+    var img = ViewBag.Image as Func<string, string, string>;
+    var sectionTitle = isSeries ? "Phim Bộ" : isSingle ? "Phim Lẻ" : "Phim phổ biến";
+}
+
+<!-- Blazor Interactive Filter Component -->
+@(await Html.RenderComponentAsync<webxemphim.Components.MovieFilter>(
+    Microsoft.AspNetCore.Mvc.Rendering.RenderMode.Server))
+
+<section class="mt-4" data-page="movies-index">
+    <div class="d-flex align-items-end justify-content-between mb-3">
+        <div>
+            <h2 class="section-title mb-1 animated-text">@sectionTitle</h2>
+            <div class="section-bar"></div>
+        </div>
+    </div>
+    
+    @if (Model == null || !Model.Any())
+    {
+        <div class="text-center py-5">
+            <p class="text-muted">Không tìm thấy phim nào.</p>
+            <a asp-controller="Movies" asp-action="Index" class="btn neon-btn">Xem tất cả phim</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var m in Model)
+            {
+                var title = !string.IsNullOrWhiteSpace(m.Title) ? m.Title : m.Name;
+                var poster = !string.IsNullOrWhiteSpace(m.PosterUrl) ? m.PosterUrl : "/favicon.ico";
+                
+                <div class="col-6 col-md-3 col-lg-2 d-flex">
+                    <div class="movie-card glass-card p-2 d-flex flex-column h-100 w-100">
+                        <div class="poster rounded-3" data-bg='@poster' style="background-image:url('@poster'); aspect-ratio:2/3; background-size:cover; background-position:center;"></div>
+                        <div class="overlay">
+                            <div class="d-flex gap-2">
+                                @if (!string.IsNullOrWhiteSpace(m.Slug))
+                                {
+                                    <a class="btn btn-sm neon-btn" asp-controller="Movies" asp-action="Watch" asp-route-slug="@m.Slug">Xem phim</a>
+                                    <a class="btn btn-sm btn-outline-light" asp-controller="Movies" asp-action="Detail" asp-route-slug="@m.Slug">Chi tiết</a>
+                                }
+                                else if (m.Id > 0)
+                                {
+                                    <a class="btn btn-sm neon-btn" asp-controller="Movies" asp-action="Watch" asp-route-slug="phim-demo-@m.Id">Xem phim</a>
+                                    <a class="btn btn-sm btn-outline-light" asp-controller="Movies" asp-action="Detail" asp-route-slug="phim-demo-@m.Id">Chi tiết</a>
+                                }
+                            </div>
+                        </div>
+                        <div class="pt-2 flex-grow-1 d-flex flex-column justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge badge-imdb">IMDb @(m.VoteAverage?.ToString("0.0") ?? "-")</span>
+                                <span class="tag">@m.Year</span>
+                            </div>
+                            <h6 class="mt-2 mb-1 text-truncate-2" style="min-height:2.6em; line-height:1.3;">@title</h6>
+                            <div class="movie-meta">@m.Year</div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</section>
+
+

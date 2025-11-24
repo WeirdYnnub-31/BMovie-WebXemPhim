@@ -1,0 +1,318 @@
+@using webxemphim.Models
+@using webxemphim.Models.DTOs
+@using System.Net.Http.Json
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+
+<div class="filter-container">
+    <div class="filter-header">
+        <h3 class="filter-title">🔍 Bộ lọc nâng cao</h3>
+        <button class="btn-reset" @onclick="ResetFilters" title="Xóa bộ lọc">
+            <i class="fas fa-redo"></i> Đặt lại
+        </button>
+    </div>
+
+    <div class="filter-body">
+        <div class="filter-row">
+            <!-- Search -->
+            <div class="filter-group">
+                <label class="filter-label">Tìm kiếm</label>
+                <input type="text" 
+                       class="filter-input" 
+                       @bind="SearchQuery" 
+                       @bind:event="oninput"
+                       @onkeypress="HandleKeyPress"
+                       placeholder="Nhập tên phim..." />
+            </div>
+
+            <!-- Genre -->
+            <div class="filter-group">
+                <label class="filter-label">Thể loại</label>
+                <select class="filter-select" value="@SelectedGenre" @onchange="@((ChangeEventArgs e) => { SelectedGenre = e.Value?.ToString() ?? string.Empty; OnFilterChange(); })">
+                    <option value="">Tất cả thể loại</option>
+                    @if (Genres != null)
+                    {
+                        @foreach (var genre in Genres)
+                        {
+                            <option value="@genre.Slug">@genre.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <!-- Year -->
+            <div class="filter-group">
+                <label class="filter-label">Năm</label>
+                <input type="number" 
+                       class="filter-input" 
+                       value="@SelectedYear" 
+                       @onchange="@((ChangeEventArgs e) => { if (int.TryParse(e.Value?.ToString(), out var year)) { SelectedYear = year; OnFilterChange(); } })"
+                       placeholder="2024" 
+                       min="1900" 
+                       max="@DateTime.Now.Year" />
+            </div>
+
+            <!-- IMDb Rating -->
+            <div class="filter-group">
+                <label class="filter-label">IMDb tối thiểu</label>
+                <div class="rating-slider-container">
+                    <input type="range" 
+                           class="filter-range" 
+                           value="@MinRating" 
+                           @onchange="@((ChangeEventArgs e) => { if (double.TryParse(e.Value?.ToString(), out var rating)) { MinRating = rating; OnFilterChange(); } })"
+                           min="0" 
+                           max="10" 
+                           step="0.5" />
+                    <span class="rating-value">@MinRating.ToString("F1")+</span>
+                </div>
+            </div>
+
+            <!-- Sort By -->
+            <div class="filter-group">
+                <label class="filter-label">Sắp xếp</label>
+                <select class="filter-select" value="@SortBy" @onchange="@((ChangeEventArgs e) => { SortBy = e.Value?.ToString() ?? "viewcount"; OnFilterChange(); })">
+                    <option value="viewcount">Xem nhiều nhất</option>
+                    <option value="rating">Đánh giá cao nhất</option>
+                    <option value="date">Mới nhất</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Apply Button -->
+        <div class="filter-actions">
+            <button class="btn-apply" @onclick="ApplyFilters">
+                <i class="fas fa-filter"></i> Áp dụng bộ lọc
+            </button>
+            <span class="result-count">@(FilteredMovies?.TotalCount ?? 0) kết quả</span>
+        </div>
+    </div>
+
+    <!-- Results -->
+    @if (IsLoading)
+    {
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <p>Đang tải...</p>
+        </div>
+    }
+    else if (FilteredMovies != null && FilteredMovies.Data != null && FilteredMovies.Data.Any())
+    {
+        <div class="movies-grid">
+            @foreach (var movie in FilteredMovies.Data)
+            {
+                <div class="movie-card" @onclick="() => NavigateToMovie(movie.Slug)">
+                    <div class="movie-poster">
+                        <img src="@GetPosterUrl(movie.PosterUrl)" 
+                             alt="@movie.Title" 
+                             loading="lazy" />
+                        @if (movie.Imdb.HasValue)
+                        {
+                            <div class="movie-badge">⭐ @movie.Imdb.Value.ToString("F1")</div>
+                        }
+                    </div>
+                    <div class="movie-info">
+                        <h4 class="movie-title">@movie.Title</h4>
+                        <div class="movie-meta">
+                            @if (movie.Year.HasValue)
+                            {
+                                <span>@movie.Year</span>
+                            }
+                            @if (movie.Genres != null && movie.Genres.Any())
+                            {
+                                <span>• @string.Join(", ", movie.Genres.Take(2))</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Pagination -->
+        @if (FilteredMovies.TotalCount > FilteredMovies.PageSize)
+        {
+            <div class="pagination">
+                <button class="btn-pagination" 
+                        @onclick="() => ChangePage(CurrentPage - 1)" 
+                        disabled="@(CurrentPage <= 1)">
+                    <i class="fas fa-chevron-left"></i> Trước
+                </button>
+                <span class="page-info">
+                    Trang @CurrentPage / @TotalPages
+                </span>
+                <button class="btn-pagination" 
+                        @onclick="() => ChangePage(CurrentPage + 1)" 
+                        disabled="@(CurrentPage >= TotalPages)">
+                    Sau <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        }
+    }
+    else if (FilteredMovies != null && FilteredMovies.TotalCount == 0)
+    {
+        <div class="empty-state">
+            <i class="fas fa-search"></i>
+            <p>Không tìm thấy phim nào phù hợp với bộ lọc của bạn.</p>
+            <button class="btn-reset" @onclick="ResetFilters">Thử lại</button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public EventCallback<FilterChangedEventArgs> OnFiltersChanged { get; set; }
+
+    private List<GenreDto>? Genres;
+    private PagedResultDto<MovieListItemDto>? FilteredMovies;
+    private bool IsLoading = false;
+
+    private string SearchQuery = string.Empty;
+    private string SelectedGenre = string.Empty;
+    private int? SelectedYear;
+    private double MinRating = 0;
+    private string SortBy = "viewcount";
+    private int CurrentPage = 1;
+    private int PageSize = 20;
+    private int TotalPages => FilteredMovies != null 
+        ? (int)Math.Ceiling((double)FilteredMovies.TotalCount / PageSize) 
+        : 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadGenres();
+        await ApplyFilters();
+    }
+
+    private async Task LoadGenres()
+    {
+        try
+        {
+            var httpClient = HttpClientFactory.CreateClient();
+            httpClient.BaseAddress = new Uri(Navigation.BaseUri);
+            var response = await httpClient.GetFromJsonAsync<List<GenreDto>>("/api/v2/genres");
+            Genres = response ?? new List<GenreDto>();
+        }
+        catch
+        {
+            Genres = new List<GenreDto>();
+        }
+    }
+
+    private async Task ApplyFilters()
+    {
+        IsLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var httpClient = HttpClientFactory.CreateClient();
+            httpClient.BaseAddress = new Uri(Navigation.BaseUri);
+
+            var queryParams = new List<string>
+            {
+                $"page={CurrentPage}",
+                $"pageSize={PageSize}",
+                $"sortBy={SortBy}"
+            };
+
+            if (!string.IsNullOrWhiteSpace(SearchQuery))
+                queryParams.Add($"search={Uri.EscapeDataString(SearchQuery)}");
+            if (!string.IsNullOrWhiteSpace(SelectedGenre))
+                queryParams.Add($"genre={Uri.EscapeDataString(SelectedGenre)}");
+            if (SelectedYear.HasValue)
+                queryParams.Add($"year={SelectedYear}");
+
+            // Use v1 API endpoint (MoviesApiController)
+            var endpoint = $"/api/movies?{string.Join("&", queryParams)}";
+            var response = await httpClient.GetFromJsonAsync<PagedResultDto<MovieListItemDto>>(endpoint);
+            FilteredMovies = response;
+
+            // Notify parent component
+            await OnFiltersChanged.InvokeAsync(new FilterChangedEventArgs
+            {
+                SearchQuery = SearchQuery,
+                Genre = SelectedGenre,
+                Year = SelectedYear,
+                MinRating = MinRating,
+                SortBy = SortBy
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error applying filters: {ex.Message}");
+            FilteredMovies = new PagedResultDto<MovieListItemDto>
+            {
+                Data = new List<MovieListItemDto>(),
+                TotalCount = 0,
+                Page = CurrentPage,
+                PageSize = PageSize
+            };
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnFilterChange()
+    {
+        CurrentPage = 1; // Reset to first page when filter changes
+        await ApplyFilters();
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await ApplyFilters();
+        }
+    }
+
+    private async Task ResetFilters()
+    {
+        SearchQuery = string.Empty;
+        SelectedGenre = string.Empty;
+        SelectedYear = null;
+        MinRating = 0;
+        SortBy = "viewcount";
+        CurrentPage = 1;
+        await ApplyFilters();
+    }
+
+    private async Task ChangePage(int page)
+    {
+        if (page >= 1 && page <= TotalPages)
+        {
+            CurrentPage = page;
+            await ApplyFilters();
+            // Scroll to top
+            await JSRuntime.InvokeVoidAsync("window.scrollTo", new { top = 0, behavior = "smooth" });
+        }
+    }
+
+    private string GetPosterUrl(string? posterUrl)
+    {
+        if (string.IsNullOrWhiteSpace(posterUrl))
+            return "/favicon.ico";
+        
+        if (posterUrl.StartsWith("http"))
+            return $"/img/resize?url={Uri.EscapeDataString(posterUrl)}&w=300&q=80";
+        
+        return posterUrl;
+    }
+
+    private async Task NavigateToMovie(string slug)
+    {
+        Navigation.NavigateTo($"/movies/watch/{slug}");
+    }
+
+    public class FilterChangedEventArgs
+    {
+        public string SearchQuery { get; set; } = string.Empty;
+        public string Genre { get; set; } = string.Empty;
+        public int? Year { get; set; }
+        public double MinRating { get; set; }
+        public string SortBy { get; set; } = "viewcount";
+    }
+}
+

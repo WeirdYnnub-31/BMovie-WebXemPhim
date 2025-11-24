@@ -1,0 +1,14 @@
+@{
+    var title = (ViewData["Title"] as string) ?? "bmovie";
+    var desc = (ViewData["Description"] as string) ?? "bmovie - Xem phim chất lượng cao, giao diện hiện đại, hỗ trợ Vietsub/Thuyết minh.";
+    var image = (ViewData["Image"] as string) ?? Url.Content("/favicon.ico");
+    var url = string.Concat(Context.Request.Scheme, "://", Context.Request.Host.ToUriComponent(), Context.Request.PathBase.ToUriComponent(), Context.Request.Path.ToUriComponent());
+}
+<meta name="description" content="@desc" />
+<meta property="og:title" content="@title" />
+<meta property="og:description" content="@desc" />
+<meta property="og:image" content="@image" />
+<meta property="og:url" content="@url" />
+<meta property="og:type" content="website" />
+<link rel="canonical" href="@url" />
+

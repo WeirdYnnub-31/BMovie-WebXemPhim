@@ -1,0 +1,27 @@
+@{
+    ViewData["Title"] = "Đăng nhập";
+}
+<section class="glass-card p-4" data-page="login">
+    <h2 class="section-title mb-2 animated-text">Đăng nhập</h2>
+    <div class="section-bar mb-3"></div>
+    <form method="post">
+        <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input name="email" type="email" class="form-control" autocomplete="email" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Mật khẩu</label>
+            <input name="password" type="password" class="form-control" autocomplete="current-password" />
+        </div>
+        <button class="neon-btn" type="submit">Đăng nhập</button>
+    </form>
+    <div class="mt-4">
+        <div class="text-white-50 mb-2">Hoặc đăng nhập nhanh:</div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-light" href="@Url.Action("ExternalLogin","Account", new { provider = "Google", returnUrl = ViewData["ReturnUrl"] })">Google</a>
+            <a class="btn btn-outline-light" href="@Url.Action("ExternalLogin","Account", new { provider = "Microsoft", returnUrl = ViewData["ReturnUrl"] })">Microsoft</a>
+        </div>
+    </div>
+</section>
+
+

@@ -1,0 +1,41 @@
+@{
+    ViewData["Title"] = "Bật xác thực 2 lớp";
+}
+<section class="glass-card p-4">
+    <h2 class="section-title mb-2">Xác thực 2 lớp (TOTP)</h2>
+    <div class="section-bar mb-3"></div>
+    @if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
+    @if (TempData["Msg"] != null) { <div class="alert alert-success">@TempData["Msg"]</div> }
+    @if (ViewBag.IsEnabled == true) {
+        <div class="alert alert-success">Bạn đã bật 2FA. Nếu muốn đổi thiết bị, nhập mã mới bên dưới.</div>
+    }
+    <ol class="text-white-50">
+        <li>Cài Google Authenticator / Microsoft Authenticator trên điện thoại.</li>
+        <li>Quét QR hoặc nhập key thủ công bên dưới.</li>
+        <li>Nhập mã 6 số để kích hoạt.</li>
+    </ol>
+    <div class="d-flex gap-4 align-items-start flex-wrap">
+        <img src="@ViewBag.Qr" alt="QR" width="200" height="200" class="rounded-3 shadow" />
+        <div>
+            <div class="mb-2 text-white-50">Key thủ công:</div>
+            <code class="d-inline-block p-2 rounded-3 bg-glass">@ViewBag.Key</code>
+        </div>
+    </div>
+    <form method="post" class="mt-3">
+        <div class="mb-2">
+            <label class="form-label">Mã xác thực 6 số</label>
+            <input name="code" class="form-control" placeholder="123 456" />
+        </div>
+        <button class="neon-btn" type="submit">Kích hoạt</button>
+    </form>
+    <div class="mt-3 d-flex gap-2">
+        <form method="post" action="@Url.Action("GenerateRecoveryCodes","Account")">
+            <button class="btn btn-outline-light" type="submit">Tạo mã khôi phục</button>
+        </form>
+        <form method="post" action="@Url.Action("Disable2FA","Account")">
+            <button class="btn btn-outline-danger" type="submit">Tắt 2FA</button>
+        </form>
+    </div>
+</section>
+
+

@@ -1,0 +1,181 @@
+@model int
+@{
+    var movieId = ViewBag.MovieId as int? ?? 0;
+    var averageRating = ViewBag.AverageRating as double? ?? 0;
+    var totalRatings = ViewBag.TotalRatings as int? ?? 0;
+    var userRating = ViewBag.UserRating as int? ?? 0;
+    var isReadOnly = ViewBag.ReadOnly as bool? ?? false;
+}
+
+<div class="star-rating" data-movie-id="@movieId" data-read-only="@isReadOnly.ToString().ToLower()">
+    <div class="stars">
+        @for (int i = 1; i <= 5; i++)
+        {
+            <span class="star @(i <= userRating ? "active" : "") @(i <= averageRating ? "rated" : "")" data-rating="@i">
+                ★
+            </span>
+        }
+    </div>
+    @if (!isReadOnly)
+    {
+        <div class="rating-info">
+            <span class="average-rating">@(averageRating > 0 ? averageRating.ToString("F1") : "Chưa có đánh giá")</span>
+            <span class="total-ratings">(@totalRatings đánh giá)</span>
+        </div>
+    }
+    else
+    {
+        <div class="rating-info">
+            <span class="average-rating">@(averageRating > 0 ? averageRating.ToString("F1") : "Chưa có đánh giá")</span>
+            <span class="total-ratings">(@totalRatings đánh giá)</span>
+        </div>
+    }
+</div>
+
+<style>
+.star-rating {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.stars {
+    display: flex;
+    gap: 2px;
+}
+
+.star {
+    font-size: 20px;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.star:hover {
+    color: #ffc107;
+    transform: scale(1.1);
+}
+
+.star.active {
+    color: #ffc107;
+}
+
+.star.rated {
+    color: #ffc107;
+}
+
+.star-rating[data-read-only="true"] .star {
+    cursor: default;
+}
+
+.star-rating[data-read-only="true"] .star:hover {
+    transform: none;
+}
+
+.rating-info {
+    font-size: 14px;
+    color: #ccc;
+}
+
+.average-rating {
+    font-weight: 600;
+    color: #ffc107;
+}
+
+.total-ratings {
+    color: #999;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const starRatings = document.querySelectorAll('.star-rating');
+    
+    starRatings.forEach(rating => {
+        const isReadOnly = rating.dataset.readOnly === 'true';
+        const movieId = parseInt(rating.dataset.movieId);
+        const stars = rating.querySelectorAll('.star');
+        
+        if (!isReadOnly) {
+            stars.forEach((star, index) => {
+                star.addEventListener('click', async function() {
+                    const score = index + 1;
+                    await rateMovie(movieId, score);
+                });
+            });
+        }
+    });
+});
+
+async function rateMovie(movieId, score) {
+    try {
+        const response = await fetch('/Rating/Rate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+            },
+            body: `movieId=${movieId}&score=${score}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Update UI
+            updateStarRating(movieId, score, result.averageRating, result.totalRatings);
+            
+            // Show success message
+            showMessage(result.message, 'success');
+        } else {
+            showMessage(result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error rating movie:', error);
+        showMessage('Có lỗi xảy ra khi đánh giá phim.', 'error');
+    }
+}
+
+function updateStarRating(movieId, userRating, averageRating, totalRatings) {
+    const ratingElement = document.querySelector(`[data-movie-id="${movieId}"]`);
+    if (!ratingElement) return;
+    
+    const stars = ratingElement.querySelectorAll('.star');
+    const averageRatingSpan = ratingElement.querySelector('.average-rating');
+    const totalRatingsSpan = ratingElement.querySelector('.total-ratings');
+    
+    // Update stars
+    stars.forEach((star, index) => {
+        star.classList.remove('active', 'rated');
+        if (index < userRating) {
+            star.classList.add('active');
+        }
+        if (index < Math.floor(averageRating)) {
+            star.classList.add('rated');
+        }
+    });
+    
+    // Update info
+    if (averageRatingSpan) {
+        averageRatingSpan.textContent = averageRating || 'Chưa có đánh giá';
+    }
+    if (totalRatingsSpan) {
+        totalRatingsSpan.textContent = `(${totalRatings} đánh giá)`;
+    }
+}
+
+function showMessage(message, type) {
+    // Simple message display - you can enhance this with a proper notification system
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+    messageDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    messageDiv.textContent = message;
+    
+    document.body.appendChild(messageDiv);
+    
+    setTimeout(() => {
+        messageDiv.remove();
+    }, 3000);
+}
+</script>
