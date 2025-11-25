@@ -1,9 +1,12 @@
 @using webxemphim.Models
 @using webxemphim.Models.DTOs
+@using webxemphim.Data
+@using Microsoft.EntityFrameworkCore
 @using System.Net.Http.Json
 @inject IHttpClientFactory HttpClientFactory
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject ApplicationDbContext Db
 
 <div class="filter-container">
     <div class="filter-header">
@@ -186,14 +189,41 @@
     {
         try
         {
-            var httpClient = HttpClientFactory.CreateClient();
-            httpClient.BaseAddress = new Uri(Navigation.BaseUri);
-            var response = await httpClient.GetFromJsonAsync<List<GenreDto>>("/api/v2/genres");
-            Genres = response ?? new List<GenreDto>();
+            Genres = await Db.Genres
+                .AsNoTracking()
+                .OrderBy(g => g.Name)
+                .Select(g => new GenreDto
+                {
+                    Id = g.Id,
+                    Name = g.Name,
+                    Slug = g.Slug ?? g.Name,
+                    MovieCount = g.MovieGenres.Count
+                })
+                .ToListAsync();
+
+            if (Genres == null || Genres.Count == 0)
+            {
+                Genres = await FetchGenresFromApiAsync();
+            }
         }
         catch
         {
-            Genres = new List<GenreDto>();
+            Genres = await FetchGenresFromApiAsync();
+        }
+    }
+
+    private async Task<List<GenreDto>> FetchGenresFromApiAsync()
+    {
+        try
+        {
+            var httpClient = HttpClientFactory.CreateClient();
+            httpClient.BaseAddress = new Uri(Navigation.BaseUri);
+            var response = await httpClient.GetFromJsonAsync<List<GenreDto>>("/api/v2/genres");
+            return response ?? new List<GenreDto>();
+        }
+        catch
+        {
+            return new List<GenreDto>();
         }
     }
 
@@ -222,9 +252,15 @@
                 queryParams.Add($"year={SelectedYear}");
 
             // Use v1 API endpoint (MoviesApiController)
-            var endpoint = $"/api/movies?{string.Join("&", queryParams)}";
+            var endpoint = $"/api/v2/movies?{string.Join("&", queryParams)}";
             var response = await httpClient.GetFromJsonAsync<PagedResultDto<MovieListItemDto>>(endpoint);
-            FilteredMovies = response;
+            FilteredMovies = response ?? new PagedResultDto<MovieListItemDto>
+            {
+                Data = new List<MovieListItemDto>(),
+                Page = CurrentPage,
+                PageSize = PageSize,
+                TotalCount = 0
+            };
 
             // Notify parent component
             await OnFiltersChanged.InvokeAsync(new FilterChangedEventArgs
@@ -301,9 +337,14 @@
         return posterUrl;
     }
 
-    private async Task NavigateToMovie(string slug)
+    private void NavigateToMovie(string? slug)
     {
-        Navigation.NavigateTo($"/movies/watch/{slug}");
+        if (string.IsNullOrWhiteSpace(slug))
+        {
+            return;
+        }
+
+        Navigation.NavigateTo($"/watch/{slug}");
     }
 
     public class FilterChangedEventArgs

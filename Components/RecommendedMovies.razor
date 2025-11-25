@@ -1,11 +1,15 @@
 @using webxemphim.Models
 @using webxemphim.Models.DTOs
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Http
+@using System.Net
+@using System.Net.Http
 @using System.Net.Http.Json
 @inject IHttpClientFactory HttpClientFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JSRuntime
 @inject NavigationManager Navigation
+@inject IHttpContextAccessor HttpContextAccessor
 
 <div class="recommendations-container">
     <h2 class="recommendations-title">
@@ -110,24 +114,30 @@
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             UserId = authState.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
 
-            var httpClient = HttpClientFactory.CreateClient();
-            httpClient.BaseAddress = new Uri(Navigation.BaseUri);
-
             string endpoint = Type switch
             {
-                RecommendationType.Personalized => UserId != null 
-                    ? $"/api/v2/recommendations?limit={Limit}" 
+                RecommendationType.Personalized => UserId != null
+                    ? $"/api/v2/recommendations?limit={Limit}"
                     : $"/api/v2/recommendations/anonymous?limit={Limit}",
                 RecommendationType.Trending => $"/api/v2/recommendations/trending?limit={Limit}",
                 RecommendationType.NewReleases => $"/api/v2/recommendations/new-releases?limit={Limit}",
-                RecommendationType.Similar => MovieId.HasValue 
-                    ? $"/api/v2/recommendations/similar/{MovieId}?limit={Limit}" 
+                RecommendationType.Similar => MovieId.HasValue
+                    ? $"/api/v2/recommendations/similar/{MovieId}?limit={Limit}"
                     : $"/api/v2/recommendations/anonymous?limit={Limit}",
                 _ => $"/api/v2/recommendations/anonymous?limit={Limit}"
             };
 
-            var response = await httpClient.GetFromJsonAsync<List<MovieDto>>(endpoint);
-            Recommendations = response ?? new List<MovieDto>();
+            Recommendations = await FetchRecommendationsAsync(endpoint, allowAuthFallback: Type == RecommendationType.Personalized);
+
+            if ((Recommendations?.Count ?? 0) == 0 && Type == RecommendationType.Personalized)
+            {
+                Recommendations = await FetchRecommendationsAsync($"/api/v2/recommendations/trending?limit={Limit}", allowAuthFallback: false);
+            }
+
+            if ((Recommendations?.Count ?? 0) == 0)
+            {
+                Recommendations = await FetchRecommendationsAsync($"/api/v2/recommendations/new-releases?limit={Limit}", allowAuthFallback: false);
+            }
         }
         catch (Exception ex)
         {
@@ -137,6 +147,51 @@
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    private HttpClient CreateHttpClient()
+    {
+        var client = HttpClientFactory.CreateClient();
+        client.BaseAddress = new Uri(Navigation.BaseUri);
+        client.Timeout = TimeSpan.FromSeconds(30);
+        return client;
+    }
+
+    private async Task<List<MovieDto>> FetchRecommendationsAsync(string endpoint, bool allowAuthFallback)
+    {
+        try
+        {
+            var client = CreateHttpClient();
+            using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+
+            var cookieHeader = HttpContextAccessor.HttpContext?.Request?.Headers["Cookie"].ToString();
+            if (!string.IsNullOrWhiteSpace(cookieHeader))
+            {
+                request.Headers.TryAddWithoutValidation("Cookie", cookieHeader);
+            }
+
+            var response = await client.SendAsync(request);
+
+            if (response.StatusCode == HttpStatusCode.Unauthorized && allowAuthFallback)
+            {
+                return await FetchRecommendationsAsync($"/api/v2/recommendations/anonymous?limit={Limit}", allowAuthFallback: false);
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Recommendation API error ({response.StatusCode}): {error}");
+                return new List<MovieDto>();
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<List<MovieDto>>();
+            return result ?? new List<MovieDto>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Recommendation API call failed: {ex.Message}");
+            return new List<MovieDto>();
         }
     }
 

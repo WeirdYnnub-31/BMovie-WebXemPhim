@@ -30,6 +30,7 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider, 
     Microsoft.AspNetCore.Components.Server.ServerAuthenticationStateProvider>();
 builder.Services.AddHttpClient();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient("AzureOpenAI", (sp, client) =>
 {
     var cfg = sp.GetRequiredService<IConfiguration>().GetSection("AzureOpenAI");

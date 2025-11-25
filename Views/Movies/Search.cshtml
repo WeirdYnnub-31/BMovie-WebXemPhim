@@ -110,7 +110,7 @@
 <section class="mb-5">
     <h2 class="section-title mb-1">Kết quả</h2>
     <div class="section-bar mb-3"></div>
-    <div class="row g-3">
+    <div class="row g-3 movies-search-results">
         @foreach (var m in Model)
         {
             <div class="col-6 col-md-3 col-lg-2">
@@ -216,4 +216,19 @@
         }, 300);
     });
 </script>
+
+<style>
+    /* Đảm bảo kết quả tìm kiếm luôn hiển thị đầy đủ */
+    .movies-search-results,
+    .movies-search-results .col-6,
+    .movies-search-results .movie-card {
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: none !important;
+    }
+
+    .movies-search-results .col-6 {
+        display: flex;
+    }
+</style>
 
