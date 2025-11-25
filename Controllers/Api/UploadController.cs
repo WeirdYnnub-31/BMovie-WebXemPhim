@@ -12,12 +12,25 @@ namespace webxemphim.Controllers.Api
     {
         private readonly BlobStorageService _blob;
         private readonly IWebHostEnvironment _env;
+        private readonly ILogger<UploadController> _logger;
         private const long MaxVideoFileSize = 2L * 1024 * 1024 * 1024; // 2GB
         
-        public UploadController(BlobStorageService blob, IWebHostEnvironment env) 
+        public UploadController(BlobStorageService blob, IWebHostEnvironment env, ILogger<UploadController> logger) 
         { 
             _blob = blob; 
             _env = env;
+            _logger = logger;
+        }
+
+        [Authorize]
+        [HttpGet("test")]
+        public IActionResult TestAuth()
+        {
+            return Ok(new { 
+                authenticated = User?.Identity?.IsAuthenticated ?? false,
+                userName = User?.Identity?.Name,
+                userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            });
         }
 
         [Authorize]
@@ -25,12 +38,48 @@ namespace webxemphim.Controllers.Api
         [RequestSizeLimit(25_000_000)]
         public async Task<IActionResult> UploadImage([FromForm] IFormFile file)
         {
-            if (file == null || file.Length == 0) return BadRequest(new { error = "No file" });
-            var allowed = new[] { "image/jpeg", "image/png", "image/webp" };
-            if (!allowed.Contains(file.ContentType)) return BadRequest(new { error = "Unsupported content type" });
-            await using var s = file.OpenReadStream();
-            var url = await _blob.UploadAsync(s, file.ContentType, file.FileName);
-            return Ok(new { url });
+            try
+            {
+                _logger.LogInformation("Upload image request received. User: {User}, FileName: {FileName}, Size: {Size}", 
+                    User?.Identity?.Name ?? "Anonymous", file?.FileName, file?.Length);
+                
+                if (file == null || file.Length == 0) 
+                {
+                    _logger.LogWarning("No file provided in upload request");
+                    return BadRequest(new { error = "Không có file được chọn" });
+                }
+                
+                // Validate file size (max 25MB)
+                if (file.Length > 25_000_000)
+                {
+                    _logger.LogWarning("File too large: {Size} bytes", file.Length);
+                    return BadRequest(new { error = "File ảnh quá lớn (tối đa 25MB)" });
+                }
+                
+                var allowed = new[] { "image/jpeg", "image/png", "image/webp", "image/jpg" };
+                var contentType = file.ContentType?.ToLowerInvariant() ?? string.Empty;
+                var extension = Path.GetExtension(file.FileName ?? string.Empty).ToLowerInvariant();
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+                
+                if (!allowed.Contains(contentType) && !allowedExtensions.Contains(extension))
+                {
+                    _logger.LogWarning("Invalid file type: ContentType={ContentType}, Extension={Extension}", contentType, extension);
+                    return BadRequest(new { error = $"Định dạng không được hỗ trợ. Chỉ chấp nhận JPG, PNG, WebP. File của bạn: {contentType}" });
+                }
+                
+                _logger.LogInformation("Uploading file to blob storage. ContentType: {ContentType}, Extension: {Extension}", contentType, extension);
+                
+                await using var s = file.OpenReadStream();
+                var url = await _blob.UploadAsync(s, file.ContentType ?? "image/jpeg", file.FileName);
+                
+                _logger.LogInformation("File uploaded successfully. URL: {Url}", url);
+                return Ok(new { url, message = "Tải lên thành công" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading image file");
+                return StatusCode(500, new { error = $"Lỗi khi tải lên: {ex.Message}", details = ex.ToString() });
+            }
         }
 
         [Authorize]

@@ -82,6 +82,7 @@ namespace webxemphim.Data
             {
                 e.HasIndex(x => new { x.UserId, x.MovieId, x.Type }).IsUnique(false);
                 e.Property(x => x.Payload).HasMaxLength(1024);
+                e.HasOne(x => x.Movie).WithMany().HasForeignKey(x => x.MovieId).OnDelete(DeleteBehavior.Cascade);
             });
 
             builder.Entity<webxemphim.Models.Comment>(e =>

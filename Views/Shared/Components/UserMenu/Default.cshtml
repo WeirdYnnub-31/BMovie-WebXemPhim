@@ -8,7 +8,9 @@
 {
     if (!string.IsNullOrEmpty(avatarClaim))
     {
-        var avatarUrl = avatarClaim + (avatarClaim.Contains("?") ? "&" : "?") + "t=" + DateTime.UtcNow.Ticks;
+        // Thêm cache-busting và timestamp để đảm bảo ảnh mới được load
+        var cacheBuster = DateTime.UtcNow.Ticks;
+        var avatarUrl = avatarClaim + (avatarClaim.Contains("?") ? "&" : "?") + "v=" + cacheBuster + "&t=" + cacheBuster;
         <img src="@avatarUrl" alt="Avatar" class="avatar-circle" style="width: 32px; height: 32px; object-fit: cover; border-radius: 50%;" onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling.style.display='inline-flex';" />
         <span class="avatar-circle" style="display:none;">@initial</span>
     }

@@ -72,5 +72,21 @@
             </div>
         </a>
     </nav>
+
+    @if (User?.Identity?.IsAuthenticated == true)
+    {
+        <div class="sidebar-footer mt-auto pt-3 border-top">
+            <form method="post" asp-controller="Account" asp-action="Logout" class="w-100">
+                @Html.AntiForgeryToken()
+                <button class="sidebar-item w-100 text-danger" type="submit" style="border: none; background: none; text-align: left; padding: 0.75rem 1rem;">
+                    <div class="icon-chip"><i class="fa-solid fa-sign-out-alt"></i></div>
+                    <div>
+                        <span class="item-title">Đăng xuất</span>
+                        <small>Thoát khỏi tài khoản</small>
+                    </div>
+                </button>
+            </form>
+        </div>
+    }
 </aside>
 

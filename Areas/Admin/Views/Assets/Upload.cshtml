@@ -20,18 +20,118 @@
 
 <script>
     const form = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('fileInput');
+    const resultBox = document.getElementById('result');
+    
+    // Test authentication first
+    async function testAuth() {
+        try {
+            const res = await fetch('/api/Upload/test', { 
+                credentials: 'include' 
+            });
+            const data = await res.json();
+            console.log('Auth test:', data);
+            if (!data.authenticated) {
+                resultBox.innerHTML = '<div class="alert alert-warning">Bạn cần đăng nhập để upload ảnh. <a href="/Account/Login">Đăng nhập</a></div>';
+            }
+        } catch (e) {
+            console.error('Auth test error:', e);
+        }
+    }
+    
+    // Test auth on page load
+    testAuth();
+    
     form.addEventListener('submit', async e => {
         e.preventDefault();
-        const file = document.getElementById('fileInput').files[0];
-        if (!file) { alert('Chưa chọn file'); return; }
-        const fd = new FormData();
-        fd.append('file', file);
-        const res = await fetch('/api/Upload/image', { method: 'POST', body: fd, credentials: 'same-origin' });
-        const box = document.getElementById('result');
-        if (!res.ok) { box.innerHTML = '<div class="alert alert-danger">Tải lên thất bại</div>'; return; }
-        const data = await res.json();
-        box.innerHTML = `<div class="alert alert-success">URL: <a href="${data.url}" target="_blank">${data.url}</a></div><img src="${data.url}" class="img-fluid rounded mt-2" style="max-height:240px;" />`;
+        const file = fileInput.files[0];
+        if (!file) { 
+            resultBox.innerHTML = '<div class="alert alert-warning">Vui lòng chọn file ảnh</div>';
+            return; 
+        }
+        
+        // Validate file size
+        if (file.size > 25 * 1024 * 1024) {
+            resultBox.innerHTML = '<div class="alert alert-danger">File quá lớn (tối đa 25MB)</div>';
+            return;
+        }
+        
+        // Show loading
+        resultBox.innerHTML = '<div class="alert alert-info">Đang tải lên... <i class="fas fa-spinner fa-spin"></i></div>';
+        
+        try {
+            const fd = new FormData();
+            fd.append('file', file);
+            
+            const res = await fetch('/api/Upload/image', { 
+                method: 'POST', 
+                body: fd, 
+                credentials: 'include',  // Đảm bảo gửi cookie
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                }
+            });
+            
+            let data;
+            try {
+                data = await res.json();
+            } catch (e) {
+                resultBox.innerHTML = `<div class="alert alert-danger">
+                    <strong>Lỗi:</strong> Không thể đọc phản hồi từ server
+                    <br><small>Status: ${res.status} ${res.statusText}</small>
+                </div>`;
+                console.error('Upload error:', e);
+                return;
+            }
+            
+            if (!res.ok) {
+                resultBox.innerHTML = `<div class="alert alert-danger">
+                    <strong>Lỗi:</strong> ${data.error || 'Tải lên thất bại'}
+                    ${res.status === 401 ? '<br><small>Vui lòng đăng nhập lại</small>' : ''}
+                    ${res.status === 413 ? '<br><small>File quá lớn</small>' : ''}
+                </div>`;
+                return;
+            }
+            
+            // Success
+            resultBox.innerHTML = `
+                <div class="alert alert-success">
+                    <strong>Thành công!</strong> ${data.message || ''}
+                    <br><small>URL: <a href="${data.url}" target="_blank" class="text-white">${data.url}</a></small>
+                </div>
+                <div class="mt-3">
+                    <img src="${data.url}" class="img-fluid rounded border" style="max-height:400px; max-width:100%;" alt="Uploaded image" />
+                </div>
+                <div class="mt-2">
+                    <button class="btn btn-sm btn-outline-light" onclick="copyToClipboard('${data.url}')">
+                        <i class="fas fa-copy me-1"></i>Copy URL
+                    </button>
+                </div>
+            `;
+            
+            // Reset form
+            fileInput.value = '';
+        } catch (error) {
+            resultBox.innerHTML = `<div class="alert alert-danger">
+                <strong>Lỗi:</strong> ${error.message || 'Không thể kết nối đến server'}
+            </div>`;
+        }
     });
+    
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Đã copy URL vào clipboard!');
+        }).catch(() => {
+            // Fallback
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            alert('Đã copy URL vào clipboard!');
+        });
+    }
 </script>
 
 

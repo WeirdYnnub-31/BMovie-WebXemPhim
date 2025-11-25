@@ -496,11 +496,69 @@ namespace webxemphim.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var movie = await _db.Movies.FindAsync(id);
-            if (movie == null) return NotFound();
-            _db.Movies.Remove(movie);
-            await _db.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                var movie = await _db.Movies.FindAsync(id);
+                if (movie == null)
+                {
+                    TempData["Message"] = "Không tìm thấy phim để xóa.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Xóa dữ liệu liên quan trước (các bảng không có cascade delete)
+                
+                // 1. Xóa UserInventoryItems liên quan đến phim
+                var userInventoryItems = await _db.UserInventoryItems
+                    .Where(ui => ui.MovieId.HasValue && ui.MovieId.Value == id)
+                    .ToListAsync();
+                if (userInventoryItems.Any())
+                {
+                    _db.UserInventoryItems.RemoveRange(userInventoryItems);
+                    await _db.SaveChangesAsync();
+                }
+
+                // 2. Xóa Notifications liên quan đến phim (có Restrict, cần xóa thủ công)
+                var notifications = await _db.Notifications
+                    .Where(n => n.MovieId.HasValue && n.MovieId.Value == id)
+                    .ToListAsync();
+                if (notifications.Any())
+                {
+                    _db.Notifications.RemoveRange(notifications);
+                    await _db.SaveChangesAsync();
+                }
+
+                // 3. Xóa MovieGenres (bảng trung gian - có cascade nhưng xóa thủ công để chắc chắn)
+                var movieGenres = await _db.MovieGenres
+                    .Where(mg => mg.MovieId == id)
+                    .ToListAsync();
+                if (movieGenres.Any())
+                {
+                    _db.MovieGenres.RemoveRange(movieGenres);
+                    await _db.SaveChangesAsync();
+                }
+
+                // Các bảng có cascade delete sẽ tự động xóa khi xóa Movie:
+                // - Comments (Cascade)
+                // - MovieSources (Cascade)
+                // - ViewHits (Cascade)
+                // - Ratings (Cascade)
+                // - WatchParties (Cascade) - sẽ tự động xóa WatchPartyParticipants và WatchPartyMessages
+                // - Subtitles (Cascade)
+                // - UserShares (Cascade)
+                // - Feedbacks (SetNull - sẽ set MovieId = null)
+
+                // Xóa phim
+                _db.Movies.Remove(movie);
+                await _db.SaveChangesAsync();
+
+                TempData["Message"] = $"Đã xóa thành công phim '{movie.Title}' và tất cả dữ liệu liên quan.";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                TempData["Message"] = $"Lỗi khi xóa phim: {ex.Message}";
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         [HttpGet]

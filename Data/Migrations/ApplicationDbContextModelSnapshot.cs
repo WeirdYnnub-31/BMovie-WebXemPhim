@@ -1436,7 +1436,8 @@ namespace webxemphim.Data.Migrations
                 {
                     b.HasOne("webxemphim.Models.Movie", "Movie")
                         .WithMany()
-                        .HasForeignKey("MovieId");
+                        .HasForeignKey("MovieId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Movie");
                 });

@@ -47,6 +47,20 @@
             display: block !important;
         }
         
+        /* CRITICAL: Ensure all buttons are visible */
+        button:not(.d-none):not([hidden]),
+        .btn:not(.d-none):not([hidden]),
+        input[type="submit"]:not(.d-none):not([hidden]),
+        input[type="button"]:not(.d-none):not([hidden]),
+        a.btn:not(.d-none):not([hidden]),
+        form button:not(.d-none):not([hidden]),
+        form input[type="submit"]:not(.d-none):not([hidden]),
+        form input[type="button"]:not(.d-none):not([hidden]) {
+            opacity: 1 !important;
+            visibility: visible !important;
+            display: inline-block !important;
+        }
+        
         .navbar-collapse {
             display: flex !important;
             visibility: visible !important;
@@ -107,6 +121,7 @@
                                     <li><hr class="dropdown-divider" /></li>
                                     <li>
                                         <form method="post" asp-controller="Account" asp-action="Logout">
+                                            @Html.AntiForgeryToken()
                                             <button class="dropdown-item text-danger" type="submit">Đăng xuất</button>
                                         </form>
                                     </li>
@@ -187,6 +202,7 @@
     <script src="~/js/gsap-animations.js" asp-append-version="true"></script>
     <script src="~/js/page-specific-animations.js" asp-append-version="true"></script>
     <script src="~/js/theme-toggle-enhanced.js" asp-append-version="true"></script>
+    <script src="~/js/ensure-buttons-visible.js" asp-append-version="true"></script>
     <script>
         // CRITICAL: Ensure header/navbar visibility immediately - MUST run first
         (function() {
@@ -204,12 +220,15 @@
                     header.style.setProperty('position', 'relative', 'important');
                     header.style.setProperty('z-index', '1030', 'important');
                     
-                    // Ensure all navbar items are visible
-                    const navbarItems = header.querySelectorAll('.navbar-brand, .nav-link, .dropdown-toggle, .btn, .navbar-toggler');
+                    // Ensure all navbar items are visible (including all buttons)
+                    const navbarItems = header.querySelectorAll('.navbar-brand, .nav-link, .dropdown-toggle, .btn, .navbar-toggler, button, input[type="submit"], input[type="button"], a.btn');
                     navbarItems.forEach(item => {
-                        item.style.setProperty('opacity', '1', 'important');
-                        item.style.setProperty('transform', 'translateX(0) translateY(0)', 'important');
-                        item.style.setProperty('visibility', 'visible', 'important');
+                        if (!item.classList.contains('d-none') && !item.hasAttribute('hidden')) {
+                            item.style.setProperty('opacity', '1', 'important');
+                            item.style.setProperty('transform', 'translateX(0) translateY(0)', 'important');
+                            item.style.setProperty('visibility', 'visible', 'important');
+                            item.style.setProperty('display', '', 'important');
+                        }
                     });
                 }
                 
@@ -222,12 +241,15 @@
                     navbar.style.setProperty('top', '0', 'important');
                     navbar.style.setProperty('z-index', '1030', 'important');
                     
-                    // Ensure all navbar items are visible
-                    const navbarItems = navbar.querySelectorAll('.navbar-brand, .nav-link, .dropdown-toggle, .btn, .navbar-toggler');
+                    // Ensure all navbar items are visible (including all buttons)
+                    const navbarItems = navbar.querySelectorAll('.navbar-brand, .nav-link, .dropdown-toggle, .btn, .navbar-toggler, button, input[type="submit"], input[type="button"], a.btn');
                     navbarItems.forEach(item => {
-                        item.style.setProperty('opacity', '1', 'important');
-                        item.style.setProperty('transform', 'translateX(0) translateY(0)', 'important');
-                        item.style.setProperty('visibility', 'visible', 'important');
+                        if (!item.classList.contains('d-none') && !item.hasAttribute('hidden')) {
+                            item.style.setProperty('opacity', '1', 'important');
+                            item.style.setProperty('transform', 'translateX(0) translateY(0)', 'important');
+                            item.style.setProperty('visibility', 'visible', 'important');
+                            item.style.setProperty('display', '', 'important');
+                        }
                     });
                     
                     // Ensure navbar collapse is visible

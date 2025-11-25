@@ -79,6 +79,8 @@ BMovie WebXemPhim cung cấp trải nghiệm xem phim toàn diện với giao di
    ```
 
    > Khi khởi chạy, hệ thống cũng tự đồng bộ bảng `ViewHits` (các cột `WatchProgress`, `Duration`, `EpisodeNumber`).
+   
+   > 📖 **Xem thêm**: [Hướng dẫn chi tiết về Database](./DATABASE_GUIDE.md) - bao gồm cách cập nhật, backup và restore database.
 
 4. **Chạy ứng dụng**
 
@@ -125,8 +127,18 @@ BMovie WebXemPhim cung cấp trải nghiệm xem phim toàn diện với giao di
 
 - `dotnet watch run` – hot reload khi phát triển.
 - `dotnet ef migrations add <Name>` – tạo migration mới.
+- `dotnet ef database update` – áp dụng migrations vào database.
+- `.\scripts\backup-database.ps1` – backup database tự động (PowerShell).
+- `.\scripts\restore-database.ps1` – restore database từ file backup (PowerShell).
 - `npm install && npm run build` – build assets khi cần mở rộng front-end pipeline.
 - `docs/` – bổ sung tài liệu triển khai (Docker, Azure, CI/CD…).
+
+### Thông tin Database
+
+- **Tên database**: `webxemphim`
+- **Server**: Theo cấu hình trong `appsettings.json` hoặc user-secrets
+- **Migrations**: Nằm trong `Data/Migrations/`
+- **Hướng dẫn đầy đủ**: Xem [DATABASE_GUIDE.md](./DATABASE_GUIDE.md)
 
 ## Roadmap gợi ý
 

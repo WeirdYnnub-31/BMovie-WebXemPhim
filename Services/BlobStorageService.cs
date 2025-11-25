@@ -32,20 +32,59 @@ namespace webxemphim.Services
             if (_containerClient == null)
             {
                 // Fallback save to wwwroot/uploads
-                var dir = Path.Combine(_env.WebRootPath, "uploads");
+                var dir = Path.Combine(_env.WebRootPath, "uploads", "images");
                 Directory.CreateDirectory(dir);
-                var name = Guid.NewGuid().ToString("n") + Path.GetExtension(fileName);
+                var extension = Path.GetExtension(fileName);
+                if (string.IsNullOrWhiteSpace(extension))
+                {
+                    // Determine extension from content type
+                    extension = contentType?.ToLowerInvariant() switch
+                    {
+                        "image/jpeg" or "image/jpg" => ".jpg",
+                        "image/png" => ".png",
+                        "image/webp" => ".webp",
+                        _ => ".jpg"
+                    };
+                }
+                var name = $"{Guid.NewGuid():N}{extension}";
                 var path = Path.Combine(dir, name);
-                using (var fs = File.Create(path))
+                
+                // Reset stream position if possible
+                if (stream.CanSeek && stream.Position > 0)
+                {
+                    stream.Position = 0;
+                }
+                
+                await using (var fs = File.Create(path))
                 {
                     await stream.CopyToAsync(fs);
                 }
-                return $"/uploads/{name}";
+                return $"/uploads/images/{name}";
             }
 
-            var blobName = Guid.NewGuid().ToString("n") + Path.GetExtension(fileName);
+            var extension2 = Path.GetExtension(fileName);
+            if (string.IsNullOrWhiteSpace(extension2))
+            {
+                extension2 = contentType?.ToLowerInvariant() switch
+                {
+                    "image/jpeg" or "image/jpg" => ".jpg",
+                    "image/png" => ".png",
+                    "image/webp" => ".webp",
+                    _ => ".jpg"
+                };
+            }
+            
+            var blobName = $"{Guid.NewGuid():N}{extension2}";
             var blob = _containerClient.GetBlobClient(blobName);
+            
+            // Reset stream position if possible
+            if (stream.CanSeek && stream.Position > 0)
+            {
+                stream.Position = 0;
+            }
+            
             await blob.UploadAsync(stream, new BlobHttpHeaders { ContentType = contentType });
+            
             if (blob.CanGenerateSasUri)
             {
                 var sas = blob.GenerateSasUri(new BlobSasBuilder(BlobSasPermissions.Read, DateTimeOffset.UtcNow.AddDays(1)) { BlobContainerName = _container, BlobName = blobName });

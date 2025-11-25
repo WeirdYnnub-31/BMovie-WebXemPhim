@@ -167,6 +167,7 @@
                     <form method="post" asp-controller="Comments" asp-action="Create">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="movieId" value="@Model.Id" />
+                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
                         <textarea name="content" rows="3" class="form-control" placeholder="Viết bình luận..." maxlength="1000"></textarea>
                         <div class="d-flex justify-content-between align-items-center mt-2">
                             <small class="text-white-50 comment-counter">0/1000</small>

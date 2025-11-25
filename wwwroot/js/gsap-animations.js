@@ -47,6 +47,16 @@
         // Animate header - ensure visible first and NEVER hide it
         const header = document.querySelector('header');
         if (header) {
+            // CRITICAL: Ensure all buttons in header are visible
+            const allButtons = header.querySelectorAll('button, .btn, input[type="submit"], input[type="button"], .dropdown-toggle');
+            allButtons.forEach(btn => {
+                if (!btn.classList.contains('d-none') && !btn.hasAttribute('hidden')) {
+                    btn.style.setProperty('opacity', '1', 'important');
+                    btn.style.setProperty('visibility', 'visible', 'important');
+                    btn.style.setProperty('display', '', 'important');
+                }
+            });
+            
             // CRITICAL: Set inline styles to ensure visibility - MUST be first
             header.style.setProperty('opacity', '1', 'important');
             header.style.setProperty('transform', 'translateY(0)', 'important');

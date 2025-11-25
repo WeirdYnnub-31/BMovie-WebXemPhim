@@ -20,3 +20,32 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+/* CRITICAL: Ensure all buttons are visible by default */
+button:not(.d-none):not([hidden]),
+.btn:not(.d-none):not([hidden]),
+input[type="submit"]:not(.d-none):not([hidden]),
+input[type="button"]:not(.d-none):not([hidden]),
+a.btn:not(.d-none):not([hidden]),
+.dropdown-toggle:not(.d-none):not([hidden]),
+.navbar-toggler:not(.d-none):not([hidden]) {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-block !important;
+}
+
+/* Ensure buttons in forms are visible */
+form button:not(.d-none):not([hidden]),
+form input[type="submit"]:not(.d-none):not([hidden]),
+form input[type="button"]:not(.d-none):not([hidden]) {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-block !important;
+}
+
+/* Ensure dropdown menus are accessible */
+.dropdown:not(.d-none):not([hidden]),
+.dropdown-menu:not(.d-none):not([hidden]) {
+  opacity: 1 !important;
+  visibility: visible !important;
+}

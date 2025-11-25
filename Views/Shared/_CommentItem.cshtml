@@ -41,6 +41,7 @@
             @Html.AntiForgeryToken()
             <input type="hidden" name="movieId" value="@ViewBag.MovieId" />
             <input type="hidden" name="parentCommentId" value="@Model.Id" />
+            <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
             <div class="mb-2">
                 <textarea name="content" class="form-control" rows="2" placeholder="Viết phản hồi..." required></textarea>
             </div>
